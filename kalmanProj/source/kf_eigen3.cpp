@@ -36,10 +36,16 @@ std::pair<Eigen::MatrixXd, Eigen::MatrixXd> KFE::predict(const Eigen::MatrixXd& 
           Eigen::MatrixXd& Pp = covariance_predict;
           Eigen::MatrixXd& zp = this->measurement_predict;
 
+    //std::cout << "predict:---------------" << std::endl;
+
     xp = A*x + B*u;
     Pp = A*P*A.transpose() + G*Q*G.transpose();
     Pp = (Pp + Pp.transpose())/2.;
     zp = H*x;
+
+    //std::cout << "x:" << std::endl << x << std::endl;
+    //std::cout << "xp:" << std::endl << xp << std::endl;
+    //std::cout << "zp:" << std::endl << zp << std::endl;
 
     state = state_predict;
     covariance = covariance_predict;
@@ -62,15 +68,24 @@ std::pair<Eigen::MatrixXd, Eigen::MatrixXd> KFE::correct(const Eigen::MatrixXd& 
           Eigen::MatrixXd& xc = state_correct;
           Eigen::MatrixXd& Pc = covariance_correct;
 
+    //std::cout << "correct:---------------" << std::endl;
+
     Eigen::MatrixXd S = H*Pp*H.transpose() + R;
     Eigen::MatrixXd K = Pp*H.transpose()*S.inverse();
                     xc = xp + K * (z - zp);
                     Pc = Pp - K * S * K.transpose();
                     Pc = (Pc + Pc.transpose())/2.;
 
+    //std::cout << "xp:" << std::endl << xp << std::endl;
+    //std::cout << "z:" << std::endl << z << std::endl;
+    //std::cout << "zp:" << std::endl << zp << std::endl;
+    //std::cout << "xc:" << std::endl << xc << std::endl;
+
     state = state_correct;
     covariance = covariance_correct;
 
     return std::make_pair(state,covariance);
 }
+
+
 

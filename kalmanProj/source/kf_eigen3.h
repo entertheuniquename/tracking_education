@@ -5,7 +5,8 @@
 
 class KFE
 {
-private:
+//private:
+public:
 
     Eigen::MatrixXd state;
     Eigen::MatrixXd covariance;

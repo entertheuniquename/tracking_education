@@ -72,7 +72,6 @@ double rnd(double s, double e)
 //====================================================================================
 std::pair<Eigen::MatrixXd,Eigen::MatrixXd> make_data(Eigen::MatrixXd in_x, Eigen::MatrixXd in_model, Eigen::MatrixXd in_GQG, int iterations, double noise_start=0., double noise_end=0.)
 {
-
     Eigen::MatrixXd out_noised(in_x.cols(),iterations);
     Eigen::MatrixXd out_clear(in_x.cols(),iterations);
     Eigen::MatrixXd x = in_x.transpose();
