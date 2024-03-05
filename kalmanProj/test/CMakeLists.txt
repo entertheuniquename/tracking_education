@@ -1,7 +1,3 @@
-
-
-#set(AUTOGEN_BUILD_DIR ${BIN_DIR})
-
 set(CMAKE_AUTOMOC ON)
 
 include_directories("/usr/include/x86_64_linux_gnu/qt5")
@@ -9,7 +5,6 @@ include_directories("/usr/include/x86_64_linux_gnu/qt5/QtCore")
 include_directories("/usr/include/x86_64_linux_gnu/qt5/QtCharts")
 include_directories("/usr/include/x86_64_linux_gnu/qt5/QtTest")
 
-#message("autogen build dir:" ${AUTOGEN_BUILD_DIR})
 
 find_package(Qt5Core REQUIRED)
 if(Qt5Core_FOUND)
@@ -55,25 +50,10 @@ else(Qt5Charts_FOUND)
 endif(Qt5Charts_FOUND)
 
 file(GLOB TEST_SRC ${TEST_DIR}/* .cpp)
-#add_library(kalmanPrototype SHARED ${ALL_SRC})
 add_executable("tests_run" ${TEST_SRC})
-
-#add_executable(test_kalmanProj main.cpp test_kf_eigen3.cpp)
-#add_test(tests_run kalmanProj)
 
 qt5_use_modules(${PROJECT_NAME} Charts Core Test)
 
-#set(sources_list_test
-#    main.cpp
-#    test_1.cpp)
-
-#set(test_libraries CharmCore ${QT_QTTEST_LIBRARY} ${QT_LIBRARIES})
-
-#add_executable(test_kalmanProj ${sources_list_test})
 target_link_libraries(tests_run Qt5::Test Qt5::Charts kalmanProj)
-##target_compile_options(test_estimator PRIVATE -O0 -g3)
-
-#enable_testing()
-#add_subdirectory(test)
 
 

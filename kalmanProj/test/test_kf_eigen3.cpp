@@ -44,11 +44,16 @@ Eigen::MatrixXd estimator_step(const Eigen::MatrixXd& measurements,
     estimations.setZero();
     for(int i=1;i<measurements.cols();i++)
     {
+        Eigen::MatrixXd covariance_prev = kfe->covariance;
+
         std::pair<Eigen::MatrixXd, Eigen::MatrixXd> pred = kfe->predict(A,H,u,B);
         Eigen::MatrixXd zi(3,1);
         zi << measurements(0,i), measurements(2,i), measurements(4,i);
         std::pair<Eigen::MatrixXd, Eigen::MatrixXd> corr = kfe->correct(H,zi);
         estimations.col(i-1) = kfe->state;
+
+        if(eigen3_matrix_check(kfe->covariance))
+            kfe->covariance = covariance_prev;
     }
     return estimations;
 };
@@ -68,13 +73,28 @@ void test_KFE::data()
 
 }
 
+Eigen::MatrixXd make_covariance(Eigen::MatrixXd Rpos,Eigen::MatrixXd Rvel)
+{
+    Eigen::MatrixXd Hpos(3,6);
+    Hpos << 1., 0., 0., 0., 0., 0.,
+            0., 0., 1., 0., 0., 0.,
+            0., 0., 0., 0., 1., 0.;
+    Eigen::MatrixXd Hvel(3,6);
+    Hvel << 0., 1., 0., 0., 0., 0.,
+            0., 0., 0., 1., 0., 0.,
+            0., 0., 0., 0., 0., 1.;
+
+    return Hpos.transpose()*Rpos*Hpos + Hvel.transpose()*Rvel*Hvel;
+}
+
 void test_KFE::estimation()
 {
     // == make input data ==
-    double meas_var = 4.;
+    double meas_var = 40000.;//4.;
+    double velo_var = 200.;//4.;
     double max_speed = 4.;
-    double process_var = 1.;
-    double dt = 0.2;
+    double process_var = 300.;//1.;
+    double dt = 6.;//0.2;
     Eigen::MatrixXd A(6,6);
     A << 1., dt, 0., 0., 0., 0.,
           0., 1., 0., 0., 0., 0.,
@@ -90,6 +110,10 @@ void test_KFE::estimation()
     R << meas_var,      0.,       0.,
                0.,meas_var,       0.,
                0.,      0., meas_var;
+    Eigen::MatrixXd Rvel(3,3);
+    R << velo_var,      0.,       0.,
+               0.,velo_var,       0.,
+               0.,      0., velo_var;
     Eigen::MatrixXd Q(3,3);
     Q << process_var,         0.,          0.,
                    0.,process_var,          0.,
@@ -102,20 +126,16 @@ void test_KFE::estimation()
                 0.,       0., dt*dt/2.,
                 0.,       0.,       dt;
     Eigen::MatrixXd x0(1,6);
-    x0 << 10., 2., 0., 0., 0., 0.;
-    Eigen::MatrixXd P0(6,6);
-    P0 << meas_var,                          0.,       0.,                         0.,       0.,                         0.,
-                0., (max_speed/3)*(max_speed/3),       0.,                         0.,       0.,                         0.,
-                0.,                          0., meas_var,                         0.,       0.,                         0.,
-                0.,                          0.,       0.,(max_speed/3)*(max_speed/3),       0.,                         0.,
-                0.,                          0.,       0.,                         0., meas_var,                         0.,
-                0.,                          0.,       0.,                         0.,       0.,(max_speed/3)*(max_speed/3);
+    x0 << 10., 200., 0., 0., 0., 0.;
+    Eigen::MatrixXd P0 = make_covariance(R,Rvel);
     Eigen::MatrixXd B(6,6);
     B.setZero();
     Eigen::MatrixXd u(6,1);
     u.setZero();
 
     std::vector<MTN2> mtn_vec;
+
+    std::pair<Eigen::MatrixXd,Eigen::MatrixXd> out0 = make_data2(x0,A,G,Q,R,100,-1.,1.);//#TEMP
 
     // == statistic ==
     int iterations_statistic = 2000;
@@ -137,7 +157,7 @@ void test_KFE::estimation()
 
         if(i==0)
         {
-            //---------------------------------------------------------------------------------------------------------
+            //-- charts -----------------------------------------------------------------------------------------------
             Eigen::VectorXd x0 = out.first.row(0);
             Eigen::VectorXd y0 = out.first.row(2);
             Eigen::VectorXd z0 = out.first.row(4);
@@ -162,7 +182,7 @@ void test_KFE::estimation()
     }
 
     var_err/=iterations_statistic;
-    //---------------------------------------------------------------------------------------------------------
+    //-- charts -----------------------------------------------------------------------------------------------
     Eigen::VectorXd err_x = var_err.row(0);
     Eigen::VectorXd err_vx = var_err.row(1);
     Eigen::VectorXd err_y = var_err.row(2);
