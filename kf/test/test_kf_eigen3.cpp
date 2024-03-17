@@ -117,34 +117,34 @@ test_KFE::matrices test_KFE::data(
     matrices m;
     m.A.resize(6,6);
     m.A << 1., dt, 0., 0., 0., 0.,
-         0., 1., 0., 0., 0., 0.,
-         0., 0., 1., dt, 0., 0.,
-         0., 0., 0., 1., 0., 0.,
-         0., 0., 0., 0., 1., dt,
-         0., 0., 0., 0., 0., 1.;
+           0., 1., 0., 0., 0., 0.,
+           0., 0., 1., dt, 0., 0.,
+           0., 0., 0., 1., 0., 0.,
+           0., 0., 0., 0., 1., dt,
+           0., 0., 0., 0., 0., 1.;
     m.H.resize(3,6);
     m.H << 1., 0., 0., 0., 0., 0.,
-         0., 0., 1., 0., 0., 0.,
-         0., 0., 0., 0., 1., 0.;
+           0., 0., 1., 0., 0., 0.,
+           0., 0., 0., 0., 1., 0.;
     m.Rpos.resize(3,3);
-    m.Rpos << meas_var,      0.,       0.,
-               0.,meas_var,       0.,
-               0.,      0., meas_var;
+    m.Rpos << meas_var*meas_var,                0.,                0.,
+                             0., meas_var*meas_var,                0.,
+                             0.,                0., meas_var*meas_var;
     m.Rvel.resize(3,3);
-    m.Rvel << velo_var,      0.,       0.,
-                  0.,velo_var,       0.,
-                  0.,      0., velo_var;
+    m.Rvel << velo_var*velo_var,               0.,                0.,
+                             0.,velo_var*velo_var,                0.,
+                             0.,               0., velo_var*velo_var;
     m.Q.resize(3,3);
     m.Q << process_var,         0.,          0.,
-                  0.,process_var,          0.,
-                  0.,         0., process_var;
+                    0.,process_var,          0.,
+                    0.,         0., process_var;
     m.G.resize(6,3);
     m.G << dt*dt/2.,       0.,       0.,
-               dt,       0.,       0.,
-               0., dt*dt/2.,       0.,
-               0.,       dt,       0.,
-               0.,       0., dt*dt/2.,
-               0.,       0.,       dt;
+                 dt,       0.,       0.,
+                 0., dt*dt/2.,       0.,
+                 0.,       dt,       0.,
+                 0.,       0., dt*dt/2.,
+                 0.,       0.,       dt;
     m.x0.resize(1,6);
     m.x0 << x0.x, x0.vx, x0.y, x0.vy, x0.z, x0.vz;
     m.P0 = make_covariance(m.Rpos,m.Rvel);
@@ -172,9 +172,10 @@ void test_KFE::estimation()
     enum class MeasVec{X=0,Y=1,Z=2};
     enum class StateVec{X=0,VX=1,Y=2,VY=3,Z=4,VZ=5};
     //                    meas_var   velo_var process_var T    x0
-    matrices data1 = data(40000000., 200000., 300.,        6., {10.,200.,0.,0.,0.,0.});
-    matrices data2 = data(       4.,      4.,   1.,       0.2, {10.,  2.,0.,0.,0.,0.});
-    matrices data0 = data1;
+    matrices data1 = data(40000000., 200000., 300.,        6., { 10.,200.,0.,0.,0.,0.});
+    matrices data2 = data(       4.,      4.,   1.,       0.2, { 10.,  2.,0.,0.,0.,0.});
+    matrices data3 = data(     300.,     30.,   1.,        6., {500.,200.,0.,0.,0.,0.});
+    matrices data0 = data3;
     // ===============================================================================
     try
     {
