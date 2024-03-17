@@ -3,10 +3,10 @@
 #include <iostream>
 #include<eigen3/Eigen/Dense>
 
-#include<qt5/QtWidgets/QApplication>
-#include<qt5/QtCharts/QChartView>
-#include<qt5/QtCharts/QLineSeries>
-#include<qt5/QtCharts/QScatterSeries>
+#include<QApplication>
+#include<QChartView>
+#include<QLineSeries>
+#include<QScatterSeries>
 #include<QtCharts>
 using namespace QtCharts;
 
@@ -17,8 +17,9 @@ struct MTN2
     std::vector<double> v2;
     TYPE t;
     std::string s;
-    MTN2(TYPE t_in,std::string s_in,std::vector<double> v1_in,std::vector<double> v2_in=std::vector<double>())
-    {v1=v1_in;v2=v2_in;t=t_in;s=s_in;}
+    QColor c;
+    MTN2(TYPE t_in,std::string s_in,std::vector<double> v1_in,std::vector<double> v2_in=std::vector<double>(), QColor c_in=Qt::red)
+    {v1=v1_in;v2=v2_in;t=t_in;s=s_in;c=c_in;}
 };
 int print_charts_universal3(std::vector<MTN2> vec)
 {
@@ -50,6 +51,7 @@ int print_charts_universal3(std::vector<MTN2> vec)
                 for(int j=0;j<sz;j++)
                     series->append(vec[i].v2[j],vec[i].v1[j]);
 
+            series->setColor(vec[i].c);
             chart->addSeries(series);
             break;
         }
@@ -65,6 +67,7 @@ int print_charts_universal3(std::vector<MTN2> vec)
                 for(int j=0;j<sz;j++)
                     series->append(vec[i].v2[j],vec[i].v1[j]);
 
+            series->setColor(vec[i].c);
             chart->addSeries(series);
             break;
         }
@@ -78,6 +81,7 @@ int print_charts_universal3(std::vector<MTN2> vec)
                 for(int j=0;j<sz;j++)
                     series->append(vec[i].v2[j],vec[i].v1[j]);
 
+            series->setColor(vec[i].c);
             chart->addSeries(series);
             break;
         }
@@ -92,6 +96,7 @@ int print_charts_universal3(std::vector<MTN2> vec)
         chart.second->setTitle(chart.first.data());
 
         QChartView *chartView = new QChartView(chart.second);
+        chartView->setRubberBand(QChartView::RubberBand::RectangleRubberBand/*HorizontalRubberBand*/);
         chartView->setRenderHint(QPainter::Antialiasing);
         chartView->setWindowTitle("Simple line chart");
         chartView->resize(600,300);

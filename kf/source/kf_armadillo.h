@@ -1,7 +1,6 @@
 #pragma once
 
 #include<armadillo>
-//#include<eigen3/Eigen/Eigen>
 
 class KFA
 {
