@@ -1,33 +1,78 @@
 #include "test_kf_eigen3.h"
-
 #include "data_creator_eigen3.h"
-#include "printer_eigen3.h"
-
+#include "chprinter.h"
 #include<unsupported/Eigen/MatrixFunctions>
 #include<Eigen/Eigenvalues>
+#include "../source/models.h"
 
-void progress_print(int am, int i, int per_step=1)
+void progress_print(int am, int i, int per_step=1,std::string s="")
 {
-    static int c=0;if(i/(am/100.)>c){std::cout << "["+std::to_string(c)+"%]" << std::flush;c+=per_step;};
-    if(i==am-1)std::cout << "["+std::to_string(c)+"%]" << std::endl;
+    static int c=0;
+    static bool bs=false;
+    if(!bs){std::cout << s;bs=true;}
+    if(i/(am/100.)>c){std::cout << "["+std::to_string(c)+"%]" << std::flush;c+=per_step;};
+    if(i==am-1){std::cout << "["+std::to_string(c)+"%]" << std::endl;c=0;bs=false;}
 }
 
-int multix(const Eigen::MatrixXd a,
-           const Eigen::MatrixXd b,
-                 Eigen::MatrixXd& result)
+void detx(Eigen::MatrixXd X)
 {
-    if(a.cols()==b.cols() && a.rows()==b.rows())
-    {
-        result.resize(a.rows(),a.cols());
-        for(int k1=0;k1<a.rows();k1++)
-            for(int k2=0;k2<a.cols();k2++)
-                result(k1,k2) = a(k1,k2)*b(k1,k2);
-        return 0;
+    if(X.determinant()==0)
+        throw 66;
+}
+void bad_prob_value(double x)
+{
+    if(x<0 || x>1)
+        throw 55;
+}
+
+Eigen::MatrixXd mpow_obo(Eigen::MatrixXd x)
+{
+    return (x.array()*x.array()).matrix();
+}
+
+std::pair<Eigen::MatrixXd,Eigen::MatrixXd> estimator_probab_step(const Eigen::MatrixXd& measurements,
+                                                                 const Eigen::MatrixXd& P0,
+                                                                 const Eigen::MatrixXd& A,
+                                                                 const Eigen::MatrixXd& H,
+                                                                 const Eigen::MatrixXd& B,
+                                                                 const Eigen::MatrixXd& u,
+                                                                 const Eigen::MatrixXd& Q,
+                                                                 const Eigen::MatrixXd& G,
+                                                                 const Eigen::MatrixXd& R,
+                                                                 double target_detection_probab=1)
+{
+    // == make pass indexes ==
+    try{bad_prob_value(target_detection_probab);}  catch (int x) {
+        std::cout << "exception[" << std::to_string(x) << "]" << std::endl;
     }
-    else
-        return 1;
-}
+    int pass_am = (measurements.cols()-1)*(1-target_detection_probab);
 
+    std::vector<int> pass_index;
+    for(int i=0;i<pass_am;i++)
+        pass_index.push_back(rnd(1,measurements.cols()));
+    //=====================================================
+    // == steps ==
+    std::unique_ptr<KFE> kfe = std::make_unique<KFE>(H.transpose()*measurements.col(0),P0,A,Q,G,H,R);
+    Eigen::MatrixXd estimations((H.transpose()*measurements).rows(),measurements.cols()-1);
+    estimations.setZero();
+    Eigen::MatrixXd estimations_((H.transpose()*measurements).rows(),measurements.cols()-1);
+    estimations_.setZero();
+    for(int i=1;i<measurements.cols();i++)
+    {
+        Eigen::MatrixXd covariance_prev = kfe->get_covariance();
+        std::pair<Eigen::MatrixXd, Eigen::MatrixXd> pred = kfe->predict(A,H,u,B);
+        estimations_.col(i-1) = kfe->get_state();
+        Eigen::MatrixXd zi = measurements.col(i);
+        if(!(std::find(pass_index.begin(),pass_index.end(),i)!=pass_index.end()))
+            std::pair<Eigen::MatrixXd, Eigen::MatrixXd> corr = kfe->correct(H,zi);
+
+        estimations.col(i-1) = kfe->get_state();
+        if(kfe->get_covariance().determinant()==0)
+            kfe->get_covariance() = covariance_prev;
+    }
+
+    return std::make_pair(estimations_,estimations);
+}
 
 std::pair<Eigen::MatrixXd,Eigen::MatrixXd> estimator_step(const Eigen::MatrixXd& measurements,
                                const Eigen::MatrixXd& P0,
@@ -46,18 +91,16 @@ std::pair<Eigen::MatrixXd,Eigen::MatrixXd> estimator_step(const Eigen::MatrixXd&
     estimations_.setZero();
     for(int i=1;i<measurements.cols();i++)
     {
-        //std::cout << "________" << std::endl;
         Eigen::MatrixXd covariance_prev = kfe->get_covariance();
         std::pair<Eigen::MatrixXd, Eigen::MatrixXd> pred = kfe->predict(A,H,u,B);
         estimations_.col(i-1) = kfe->get_state();
         Eigen::MatrixXd zi = measurements.col(i);
         std::pair<Eigen::MatrixXd, Eigen::MatrixXd> corr = kfe->correct(H,zi);
         estimations.col(i-1) = kfe->get_state();
-        if(eigen3_matrix_check(kfe->get_covariance()))
+        if(kfe->get_covariance().determinant()==0)
             kfe->get_covariance() = covariance_prev;
-        //std::cout << "measurements:" << std::endl << measurements.col(i) << std::endl;
-        //std::cout << "estimations_:" << std::endl << estimations_.col(i-1) << std::endl;// << "* " << pred.first << std::endl;
-        //std::cout << "estimations:" << std::endl << estimations.col(i-1) << std::endl;// << "* " << corr.first << std::endl;
+
+
     }
 
     return std::make_pair(estimations_,estimations);
@@ -66,66 +109,24 @@ std::pair<Eigen::MatrixXd,Eigen::MatrixXd> estimator_step(const Eigen::MatrixXd&
 Eigen::MatrixXd estimator_errors(const Eigen::MatrixXd& measurements,
                                  const Eigen::MatrixXd& estimations)
 {
-    Eigen::MatrixXd errors(estimations.rows(),estimations.cols());
-    errors.setZero();
     Eigen::MatrixXd measurements0 = measurements.block(0,1,estimations.rows(),estimations.cols());
-    multix(estimations-measurements0,estimations-measurements0,errors);
-    return errors;
-}
-
-
-Eigen::MatrixXd make_covariance0(double meas_var,double max_speed)
-{
-    Eigen::MatrixXd p(6,6);
-    p << meas_var,                          0.,       0.,                          0.,       0.,                          0.,
-               0., (max_speed/3)*(max_speed/3),       0.,                          0.,       0.,                          0.,
-               0.,                          0., meas_var,                          0.,       0.,                          0.,
-               0.,                          0.,       0., (max_speed/3)*(max_speed/3),       0.,                          0.,
-               0.,                          0.,       0.,                          0., meas_var,                          0.,
-               0.,                          0.,       0.,                          0.,       0., (max_speed/3)*(max_speed/3);
-
-    return p;
-}
-
-Eigen::MatrixXd make_covariance(Eigen::MatrixXd Rpos,Eigen::MatrixXd Rvel)
-{
-    Eigen::MatrixXd Hpos(3,6);
-    Hpos << 1., 0., 0., 0., 0., 0.,
-            0., 0., 1., 0., 0., 0.,
-            0., 0., 0., 0., 1., 0.;
-    Eigen::MatrixXd Hvel(3,6);
-    Hvel << 0., 1., 0., 0., 0., 0.,
-            0., 0., 0., 1., 0., 0.,
-            0., 0., 0., 0., 0., 1.;
-
-    return Hpos.transpose()*Rpos*Hpos + Hvel.transpose()*Rvel*Hvel;
-}
-
-void detx(Eigen::MatrixXd X)
-{
-    if(X.determinant()==0)
-        throw 66;
+    return mpow_obo(estimations-measurements0);
 }
 
 test_KFE::matrices test_KFE::data(
         double meas_var,
         double velo_var,
         double process_var,
-        double dt,
+        Eigen::MatrixXd stateModel,
+        Eigen::MatrixXd measurementModel,
+        Eigen::MatrixXd GModel,
+        Eigen::MatrixXd HposModel,
+        Eigen::MatrixXd HvelModel,
         xvector x0)
 {
     matrices m;
-    m.A.resize(6,6);
-    m.A << 1., dt, 0., 0., 0., 0.,
-           0., 1., 0., 0., 0., 0.,
-           0., 0., 1., dt, 0., 0.,
-           0., 0., 0., 1., 0., 0.,
-           0., 0., 0., 0., 1., dt,
-           0., 0., 0., 0., 0., 1.;
-    m.H.resize(3,6);
-    m.H << 1., 0., 0., 0., 0., 0.,
-           0., 0., 1., 0., 0., 0.,
-           0., 0., 0., 0., 1., 0.;
+    m.A = stateModel;
+    m.H = measurementModel;
     m.Rpos.resize(3,3);
     m.Rpos << meas_var*meas_var,                0.,                0.,
                              0., meas_var*meas_var,                0.,
@@ -138,16 +139,10 @@ test_KFE::matrices test_KFE::data(
     m.Q << process_var,         0.,          0.,
                     0.,process_var,          0.,
                     0.,         0., process_var;
-    m.G.resize(6,3);
-    m.G << dt*dt/2.,       0.,       0.,
-                 dt,       0.,       0.,
-                 0., dt*dt/2.,       0.,
-                 0.,       dt,       0.,
-                 0.,       0., dt*dt/2.,
-                 0.,       0.,       dt;
+    m.G = GModel;
     m.x0.resize(1,6);
     m.x0 << x0.x, x0.vx, x0.y, x0.vy, x0.z, x0.vz;
-    m.P0 = make_covariance(m.Rpos,m.Rvel);
+    m.P0 = HposModel.transpose()*m.Rpos*HposModel + HvelModel.transpose()*m.Rvel*HvelModel;
     m.B.resize(6,6);
     m.B.setZero();
     m.u.resize(6,1);
@@ -167,72 +162,144 @@ std::vector<double> mcol(Eigen::MatrixXd m,int n)
     return  std::vector<double>(v.data(),v.data()+v.size());
 }
 
-void test_KFE::estimation()
+void step(test_KFE::matrices& data0,
+          Eigen::MatrixXd& out_raw,
+          Eigen::MatrixXd& out_noised_process,
+          Eigen::MatrixXd& out_noised_meas,
+          Eigen::MatrixXd& est_,
+          Eigen::MatrixXd& est,
+          Eigen::MatrixXd& err,
+          int measurement_amount)
 {
-    enum class MeasVec{X=0,Y=1,Z=2};
-    enum class StateVec{X=0,VX=1,Y=2,VY=3,Z=4,VZ=5};
-    //                    meas_var   velo_var process_var T    x0
-    matrices data1 = data(40000000., 200000., 300.,        6., { 10.,200.,0.,0.,0.,0.});
-    matrices data2 = data(       4.,      4.,   1.,       0.2, { 10.,  2.,0.,0.,0.,0.});
-    matrices data3 = data(     300.,     30.,   1.,        6., {500.,200.,0.,0.,0.,0.});
-    matrices data0 = data3;
-    // ===============================================================================
-    try
+    // == make measurements ==
+    make_data(out_raw,out_noised_process,out_noised_meas,
+              data0.x0,data0.A/*,measurementModel=H*/,data0.G,data0.Q,data0.Rpos,data0.H,measurement_amount,-1.,1.);
+    // == estimation ==
+    std::pair<Eigen::MatrixXd,Eigen::MatrixXd> est0 = estimator_probab_step(out_noised_meas,data0.P0,data0.A,data0.H,data0.B,data0.u,data0.Q,data0.G,data0.Rpos,0.9);
+    est_ = est0.first;
+    est = est0.second;
+    err = estimator_errors(out_noised_process,est);
+}
+
+void stat(test_KFE::matrices data0,
+          Eigen::MatrixXd& out_raw,
+          Eigen::MatrixXd& out_noised_process,
+          Eigen::MatrixXd& out_noised_meas,
+          Eigen::MatrixXd& est_,
+          Eigen::MatrixXd& est,
+          Eigen::MatrixXd& err,
+          Eigen::MatrixXd& var_err,
+          int measurement_amount, int iterations_amount)
+{
+    var_err.resize(data0.x0.cols(),measurement_amount-1);
+    var_err.setZero();
+
+    for(int i=0;i<iterations_amount;i++)
     {
-        detx(data0.P0);
-    }  catch (int x) {
-        std::cout << "exception[" << std::to_string(x) << "]" << std::endl;
-    }
-    // ===============================================================================
-    int amount = 100;
+        out_raw.setZero();
+        out_noised_process.setZero();
+        out_noised_meas.setZero();
+        est_.setZero();
+        est.setZero();
+        err.setZero();
 
-    std::vector<MTN2> mtn_vec;
+        step(data0,out_raw,out_noised_process,out_noised_meas,est_,est,err,measurement_amount);
 
-    // == statistic ==
-    int x_size = data0.x0.cols();
-    int iterations_statistic = 2000;
-    Eigen::MatrixXd var_err(x_size,amount-1);
-
-    for(int i=0;i<iterations_statistic;i++)
-    {
-        // == make measurements ==
-        std::pair<Eigen::MatrixXd,Eigen::MatrixXd> out = make_data(data0.x0,data0.A/*,measurementModel=H*/,data0.G,data0.Q,data0.Rpos,amount,-1.,1.);
-        // == estimation ==
-        std::pair<Eigen::MatrixXd,Eigen::MatrixXd> est = estimator_step(out.second,data0.P0,data0.A,data0.H,data0.B,data0.u,data0.Q,data0.G,data0.Rpos);
-        Eigen::MatrixXd err = estimator_errors(data0.H.transpose()*out.second,est.second);
-
-        if(i==0)
-        {
-            //-- charts -----------------------------------------------------------------------------------------------
-            mtn_vec.push_back(MTN2(TYPE::LINE,std::to_string(i)+": y(x)",mrow(out.first,2),mrow(out.first,0),Qt::blue));
-            mtn_vec.push_back(MTN2(TYPE::SCATTER,std::to_string(i)+": y(x)",mrow(out.second,1),mrow(out.second,0),Qt::green));
-            mtn_vec.push_back(MTN2(TYPE::SCATTER,std::to_string(i)+": y(x)",mrow(est.first,2),mrow(est.first,0),Qt::gray));
-            mtn_vec.push_back(MTN2(TYPE::LINE,std::to_string(i)+": y(x)",mrow(est.second,2),mrow(est.second,0),Qt::red));
-
-            mtn_vec.push_back(MTN2(TYPE::LINE,std::to_string(i)+": z(x)",mrow(out.first,4),mrow(out.first,0),Qt::blue));
-            mtn_vec.push_back(MTN2(TYPE::SCATTER,std::to_string(i)+": z(x)",mrow(out.second,2),mrow(out.second,0),Qt::green));
-            mtn_vec.push_back(MTN2(TYPE::SCATTER,std::to_string(i)+": z(x)",mrow(est.first,4),mrow(est.first,0),Qt::gray));
-            mtn_vec.push_back(MTN2(TYPE::LINE,std::to_string(i)+": z(x)",mrow(est.second,4),mrow(est.second,0),Qt::red));
-
-            mtn_vec.push_back(MTN2(TYPE::LINE,std::to_string(i)+": err x",mrow(err,0)));
-            mtn_vec.push_back(MTN2(TYPE::LINE,std::to_string(i)+": err y",mrow(err,2)));
-            mtn_vec.push_back(MTN2(TYPE::LINE,std::to_string(i)+": err z",mrow(err,4)));
-            //---------------------------------------------------------------------------------------------------------
-        }
         var_err+=err;
-
-        progress_print(iterations_statistic,i,5);
+        progress_print(iterations_amount,i,5,"statistic run: ");
     }
+    var_err/=iterations_amount;
+}
 
-    var_err/=iterations_statistic;
+template<class EX, class EZ>
+void print_step(Eigen::MatrixXd& out_raw,
+                Eigen::MatrixXd& out_noised_process,
+                Eigen::MatrixXd& out_noised_meas,
+                Eigen::MatrixXd& est_,
+                Eigen::MatrixXd& est,
+                std::string s="")
+{
     //-- charts -----------------------------------------------------------------------------------------------
-    mtn_vec.push_back(MTN2(TYPE::LINE,"err x",mrow(var_err,0)));
-    mtn_vec.push_back(MTN2(TYPE::LINE,"err vx",mrow(var_err,1)));
-    mtn_vec.push_back(MTN2(TYPE::LINE,"err y",mrow(var_err,2)));
-    mtn_vec.push_back(MTN2(TYPE::LINE,"err vy",mrow(var_err,3)));
-    mtn_vec.push_back(MTN2(TYPE::LINE,"err z",mrow(var_err,4)));
-    mtn_vec.push_back(MTN2(TYPE::LINE,"err vz",mrow(var_err,5)));
+    std::vector<MTN2> mtn_vec;
+    mtn_vec.push_back(MTN2(TYPE::LINE,s+"y(x)",mrow(out_raw,static_cast<int>(EX::Y)),mrow(out_raw,static_cast<int>(EX::X)),Qt::blue));
+    mtn_vec.push_back(MTN2(TYPE::SCATTER,s+"y(x)",mrow(out_noised_meas,static_cast<int>(EZ::Y)),mrow(out_noised_meas,static_cast<int>(EZ::X)),Qt::green));
+    mtn_vec.push_back(MTN2(TYPE::LINE,s+"y(x)",mrow(out_noised_process,static_cast<int>(EX::Y)),mrow(out_noised_process,static_cast<int>(EX::X)),Qt::magenta));
+    mtn_vec.push_back(MTN2(TYPE::LINE,s+"y(x)",mrow(est,static_cast<int>(EX::Y)),mrow(est,static_cast<int>(EX::X)),Qt::red));
+
+    mtn_vec.push_back(MTN2(TYPE::LINE,s+"z(x)",mrow(out_raw,static_cast<int>(EX::Z)),mrow(out_raw,static_cast<int>(EX::X)),Qt::blue));
+    mtn_vec.push_back(MTN2(TYPE::SCATTER,s+"z(x)",mrow(out_noised_meas,static_cast<int>(EZ::Z)),mrow(out_noised_meas,static_cast<int>(EZ::X)),Qt::green));
+    mtn_vec.push_back(MTN2(TYPE::LINE,s+"z(x)",mrow(out_noised_process,static_cast<int>(EX::Z)),mrow(out_noised_process,static_cast<int>(EX::X)),Qt::magenta));
+    mtn_vec.push_back(MTN2(TYPE::LINE,s+"z(x)",mrow(est,static_cast<int>(EX::Z)),mrow(est,static_cast<int>(EX::X)),Qt::red));
     //---------------------------------------------------------------------------------------------------------
     print_charts_universal3(mtn_vec);
+}
+
+template<class EX>
+void print_stat(Eigen::MatrixXd& var_err,
+                std::string s="")
+{
+    std::vector<MTN2> mtn_vec;
+    //-- charts -----------------------------------------------------------------------------------------------
+    mtn_vec.push_back(MTN2(TYPE::LINE,s+"err x",mrow(var_err,static_cast<int>(EX::X))));
+    mtn_vec.push_back(MTN2(TYPE::LINE,s+"err vx",mrow(var_err,static_cast<int>(EX::VX))));
+    mtn_vec.push_back(MTN2(TYPE::LINE,s+"err y",mrow(var_err,static_cast<int>(EX::Y))));
+    mtn_vec.push_back(MTN2(TYPE::LINE,s+"err vy",mrow(var_err,static_cast<int>(EX::VY))));
+    mtn_vec.push_back(MTN2(TYPE::LINE,s+"err z",mrow(var_err,static_cast<int>(EX::Z))));
+    mtn_vec.push_back(MTN2(TYPE::LINE,s+"err vz",mrow(var_err,static_cast<int>(EX::VZ))));
     //---------------------------------------------------------------------------------------------------------
+    print_charts_universal3(mtn_vec);
+}
+
+void test_KFE::estimation()
+{
+    Eigen::MatrixXd out_raw;
+    Eigen::MatrixXd out_noised_process;
+    Eigen::MatrixXd out_noised_meas;
+    Eigen::MatrixXd est_;
+    Eigen::MatrixXd est;
+    Eigen::MatrixXd err;
+    Eigen::MatrixXd var_err;
+
+    //================================================================================
+    //[vz,y,z,vy,vx,x]
+    matrices data1 = data(300.,//meas_var
+                          30.,//velo_var
+                          1.,//process_var
+                          Models::stateModel_3B<Eigen::MatrixXd>(6.),
+                          Models::measureModel_3B<Eigen::MatrixXd>(),
+                          Models::GModel_3B<Eigen::MatrixXd>(6.),
+                          Models::HposModel_3B<Eigen::MatrixXd>(),
+                          Models::HvelModel_3B<Eigen::MatrixXd>(),
+                          {0.,0.,0.,0.,200.,10.});
+
+    try{detx(data1.P0);}  catch (int x) {
+        std::cout << "exception[" << std::to_string(x) << "]" << std::endl;
+    }
+
+    stat(data1,out_raw,out_noised_process,out_noised_meas,est_,est,err,var_err,100,2000);
+
+    print_step<Models::X3B,Models::Z>(out_raw,out_noised_process,out_noised_meas,est_,est,"[vz,y,z,vy,vx,x](X3B): ");
+    print_stat<Models::X3B>(var_err,"[vz,y,z,vy,vx,x](X3B): ");
+    //================================================================================
+    //[x,vx,y,vy,z,vz]
+    matrices data2 = data(300.,//meas_var
+                          30.,//velo_var
+                          1.,//process_var
+                          Models::stateModel_3A<Eigen::MatrixXd>(6.),
+                          Models::measureModel_3A<Eigen::MatrixXd>(),
+                          Models::GModel_3A<Eigen::MatrixXd>(6.),
+                          Models::HposModel_3A<Eigen::MatrixXd>(),
+                          Models::HvelModel_3A<Eigen::MatrixXd>(),
+                          {10.,200.,0.,0.,0.,0.});
+
+    try{detx(data2.P0);}  catch (int x) {
+        std::cout << "exception[" << std::to_string(x) << "]" << std::endl;
+    }
+
+    stat(data2,out_raw,out_noised_process,out_noised_meas,est_,est,err,var_err,100,2000);
+
+    print_step<Models::X3A,Models::Z>(out_raw,out_noised_process,out_noised_meas,est_,est,"[x,vx,y,vy,z,vz](X3A): ");
+    print_stat<Models::X3A>(var_err,"[x,vx,y,vy,z,vz](X3A): ");
+    //================================================================================
+
 }

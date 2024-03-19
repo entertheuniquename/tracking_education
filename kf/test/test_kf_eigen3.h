@@ -44,7 +44,11 @@ class test_KFE : public QObject
         matrices data(double meas_var,
                       double velo_var,
                       double process_var,
-                      double dt,
+                      Eigen::MatrixXd stateModel,
+                      Eigen::MatrixXd measurementModel,
+                      Eigen::MatrixXd GModel,
+                      Eigen::MatrixXd HposModel,
+                      Eigen::MatrixXd HvelModel,
                       xvector x0);
         void estimation();
 };
