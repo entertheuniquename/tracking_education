@@ -10,10 +10,10 @@
 //====================================================================================
 Eigen::MatrixXd sqrt_one_by_one(Eigen::MatrixXd A)
 {
-    Eigen::MatrixXd B(A.cols(),A.rows());
+    Eigen::MatrixXd B(A.rows(),A.cols());
     for(int i=0;i<A.cols();i++)
         for(int j=0;j<A.rows();j++)
-            B(i,j) = std::sqrt(A(i,j));
+            B(j,i) = std::sqrt(A(j,i));
     return B;
 }
 //====================================================================================

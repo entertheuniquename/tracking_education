@@ -74,38 +74,6 @@ std::pair<Eigen::MatrixXd,Eigen::MatrixXd> estimator_probab_step(const Eigen::Ma
     return std::make_pair(estimations_,estimations);
 }
 
-std::pair<Eigen::MatrixXd,Eigen::MatrixXd> estimator_step(const Eigen::MatrixXd& measurements,
-                               const Eigen::MatrixXd& P0,
-                               const Eigen::MatrixXd& A,
-                               const Eigen::MatrixXd& H,
-                               const Eigen::MatrixXd& B,
-                               const Eigen::MatrixXd& u,
-                               const Eigen::MatrixXd& Q,
-                               const Eigen::MatrixXd& G,
-                               const Eigen::MatrixXd& R)
-{
-    std::unique_ptr<KFE> kfe = std::make_unique<KFE>(H.transpose()*measurements.col(0),P0,A,Q,G,H,R);
-    Eigen::MatrixXd estimations((H.transpose()*measurements).rows(),measurements.cols()-1);
-    estimations.setZero();
-    Eigen::MatrixXd estimations_((H.transpose()*measurements).rows(),measurements.cols()-1);
-    estimations_.setZero();
-    for(int i=1;i<measurements.cols();i++)
-    {
-        Eigen::MatrixXd covariance_prev = kfe->get_covariance();
-        std::pair<Eigen::MatrixXd, Eigen::MatrixXd> pred = kfe->predict(A,H,u,B);
-        estimations_.col(i-1) = kfe->get_state();
-        Eigen::MatrixXd zi = measurements.col(i);
-        std::pair<Eigen::MatrixXd, Eigen::MatrixXd> corr = kfe->correct(H,zi);
-        estimations.col(i-1) = kfe->get_state();
-        if(kfe->get_covariance().determinant()==0)
-            kfe->get_covariance() = covariance_prev;
-
-
-    }
-
-    return std::make_pair(estimations_,estimations);
-}
-
 Eigen::MatrixXd estimator_errors(const Eigen::MatrixXd& measurements,
                                  const Eigen::MatrixXd& estimations)
 {
@@ -209,6 +177,7 @@ void stat(test_KFE::matrices data0,
         progress_print(iterations_amount,i,5,"statistic run: ");
     }
     var_err/=iterations_amount;
+    var_err = sqrt_one_by_one(var_err);
 }
 
 template<class EX, class EZ>
