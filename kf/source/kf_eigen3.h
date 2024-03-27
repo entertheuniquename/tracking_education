@@ -1,9 +1,10 @@
 #pragma once
 
+#include "estimator.h"
 #include<iostream>
 #include<Eigen/Dense>
 
-class KFE
+class KFE : public Estimator<Eigen::MatrixXd>
 {
 private:
 
