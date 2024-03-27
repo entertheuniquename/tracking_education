@@ -1,5 +1,5 @@
 #include "kf_eigen3.h"
-#include "mathematics_common.h"
+#include "kf_math.h"
 
 KFE::KFE(Eigen::MatrixXd in_state,
        Eigen::MatrixXd in_covariance,
