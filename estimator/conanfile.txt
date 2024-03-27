@@ -1,0 +1,6 @@
+[requires]
+pybind11/2.10.4
+gtest/1.14.0
+
+[generators]
+cmake_find_package
