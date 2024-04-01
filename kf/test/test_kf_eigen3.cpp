@@ -39,7 +39,7 @@ std::pair<Eigen::MatrixXd,Eigen::MatrixXd> estimator_probab_step(const Eigen::Ma
         pass_index.push_back(Utils::rnd(1,measurements.cols()));
     //=====================================================
     // == steps ==
-    std::unique_ptr<Estimator<Eigen::MatrixXd>> estimator = std::make_unique<KFE>(H.transpose()*measurements.col(0),P0,A,Q,G,H,R);
+    std::unique_ptr<KFE> estimator = std::make_unique<KFE>(H.transpose()*measurements.col(0),P0,A,Q,G,H,R);
     Eigen::MatrixXd estimations((H.transpose()*measurements).rows(),measurements.cols()-1);
     estimations.setZero();
     Eigen::MatrixXd estimations_((H.transpose()*measurements).rows(),measurements.cols()-1);
