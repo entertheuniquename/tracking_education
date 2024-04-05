@@ -7,16 +7,35 @@
 
 namespace Utils
 {
-Eigen::MatrixXd transpose(Eigen::MatrixXd in)
+inline Eigen::MatrixXd transpose(Eigen::MatrixXd in)
 {
     return in.transpose();
 }
 
-Eigen::MatrixXd inverse(Eigen::MatrixXd in)
+inline Eigen::MatrixXd inverse(Eigen::MatrixXd in)
 {
     return in.inverse();
 }
-void progress_print(int am, int i, int per_step=1,std::string s="")
+
+inline Eigen::MatrixXd diag(std::vector<double> v)
+{
+    Eigen::MatrixXd M(v.size(),v.size());
+    M.setZero();
+    for(unsigned long i=0;i<v.size();i++)
+        M(i,i) = v[i];
+    return M;
+}
+
+inline Eigen::MatrixXd state_vector(std::vector<double> v)
+{
+    Eigen::MatrixXd M(1,v.size());
+    M.setZero();
+    for(unsigned long i=0;i<v.size();i++)
+        M(i,0) = v[i];
+    return M;
+}
+
+inline void progress_print(int am, int i, int per_step=1,std::string s="")
 {
     static int c=0;
     static bool bs=false;
@@ -25,7 +44,7 @@ void progress_print(int am, int i, int per_step=1,std::string s="")
     if(i==am-1){std::cout << "["+std::to_string(c)+"%]" << std::endl;c=0;bs=false;}
 }
 //random generator
-double rnd(double s, double e)
+inline double rnd(double s, double e)
 {
     using namespace std::chrono;
     int is = s*1000, ie = e*1000;
@@ -39,21 +58,21 @@ double rnd(double s, double e)
 
     return (rand() % (ie - is + 1) +is)/1000.;
 }
-Eigen::MatrixXd mpow_obo(Eigen::MatrixXd x)
+inline Eigen::MatrixXd mpow_obo(Eigen::MatrixXd x)
 {
     return (x.array()*x.array()).matrix();
 }
-std::vector<double> mrow(Eigen::MatrixXd m,int n)
+inline std::vector<double> mrow(Eigen::MatrixXd m,int n)
 {
     Eigen::VectorXd v = m.row(n);
     return  std::vector<double>(v.data(),v.data()+v.size());
 }
-std::vector<double> mcol(Eigen::MatrixXd m,int n)
+inline std::vector<double> mcol(Eigen::MatrixXd m,int n)
 {
     Eigen::VectorXd v = m.col(n);
     return  std::vector<double>(v.data(),v.data()+v.size());
 }
-Eigen::MatrixXd sqrt_one_by_one(Eigen::MatrixXd A)
+inline Eigen::MatrixXd sqrt_one_by_one(Eigen::MatrixXd A)
 {
     Eigen::MatrixXd B(A.rows(),A.cols());
     for(int i=0;i<A.cols();i++)
@@ -61,7 +80,7 @@ Eigen::MatrixXd sqrt_one_by_one(Eigen::MatrixXd A)
             B(j,i) = std::sqrt(A(j,i));
     return B;
 }
-int eigen3_matrix_check(Eigen::MatrixXd A)
+inline int eigen3_matrix_check(Eigen::MatrixXd A)
 {   //--------------------------------------------------
     Eigen::LLT<Eigen::MatrixXd> lltofCovariance(A);;
     if(lltofCovariance.info() == Eigen::NumericalIssue);

@@ -1,45 +1,73 @@
 #pragma once
 
-#include "estimator.h"
+#include "kf_eigen3.h"
+#include <map>
+#include <string>
+#include <memory>
+#include "models.h"
 
+//#[x,vx,y,vy,z,vz] //#TODO - X3A - потенциал для расширения
+template<class M>
 struct Measurement
 {
-    Point p;
-    double t; //timepoint
+    double timepoint;
+    M point;
+    M noise;
 };
 
-template<class M>
-class Track : public Estimator
+//#[x,vx,y,vy,z,vz] //#TODO - X3A - потенциал для расширения
+//#kf //#TODO - KFE - потенциал для расширения
+template<class M, class EstimatorType>
+class Track
 {
 private:
-    Point point;
+    std::unique_ptr<EstimatorType> estimator; //#TODO - KFE - потенциал для расширения
+    Measurement<M> measurement;
 public:
-    Track(Measurement measurement,
+    Track(Measurement<M> in_measurement,
           M in_covariance,
           M in_transition_state_model,
           M in_process_noise,
           M in_transition_process_noise_model,
-          M in_transition_measurement_model,
-          M in_measurement_noise):
-          Estimator(M{{measurement.p.x,measurement.p.vx,measurement.p.y,measurement.p.vy,measurement.p.z,measurement.p.vz}},
-                  in_covariance,
-                  in_transition_state_model,
-                  in_process_noise,
-                  in_transition_process_noise_model,
-                  in_transition_measurement_model,
-                  in_measurement_noise)
+          M in_transition_measurement_model):
+        measurement(in_measurement)
     {
+        estimator = std::make_unique<EstimatorType>(in_transition_measurement_model.transpose()*in_measurement.point,//#BAD_VARIANT
+                                                    in_covariance,
+                                                    in_transition_state_model,
+                                                    in_process_noise,
+                                                    in_transition_process_noise_model,
+                                                    in_transition_measurement_model,
+                                                    in_measurement.noise);;
+    }
+    void step(const Measurement<M>& m) //#TODO - аргументы - потенциал для расширения
+    {
+
+        double dt = m.timepoint - measurement.timepoint;
+        M new_transition_state_model = Models::stateModel_3A<M>(dt); //#TODO - X3A - потенциал для расширения
+        M new_transition_process_noise_model = Models::GModel_3A<M>(dt); //#TODO - X3A - потенциал для расширения
+        M new_transition_measurement_model = Models::measureModel_3A<M>(); //#TODO - X3A - потенциал для расширения
+        M new_measurement = measurement.point;
+        M new_measurement_noise = measurement.noise;
+
+        estimator->predict(new_transition_state_model,
+                           new_transition_process_noise_model,
+                           new_transition_measurement_model);
+
+        estimator->correct(new_transition_measurement_model,
+                           new_measurement,
+                           new_measurement_noise);
 
     }
-
-    void step(const Measurement& measurement)
+    void step(double timepoint) //#TODO - аргументы - потенциал для расширения
     {
-        pred();
-        corr(measurement.p,measurement.t);
-    }
+        double dt = timepoint - measurement.timepoint;
+        M new_transition_state_model = Models::stateModel_3A<M>(dt); //#TODO - X3A - потенциал для расширения
+        M new_transition_process_noise_model = Models::GModel_3A<M>(dt); //#TODO - X3A - потенциал для расширения
+        M new_transition_measurement_model = Models::measureModel_3A<M>(); //#TODO - X3A - потенциал для расширения
 
-    void step(double timepoint)
-    {
-        pred();
+        estimator->predict(new_transition_state_model,
+                           new_transition_process_noise_model,
+                           new_transition_measurement_model);
     }
 };

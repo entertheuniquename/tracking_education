@@ -40,6 +40,7 @@ std::pair<Eigen::MatrixXd,Eigen::MatrixXd> estimator_probab_step(const Eigen::Ma
     //=====================================================
     // == steps ==
     std::unique_ptr<KFE> estimator = std::make_unique<KFE>(H.transpose()*measurements.col(0),P0,A,Q,G,H,R);
+
     Eigen::MatrixXd estimations((H.transpose()*measurements).rows(),measurements.cols()-1);
     estimations.setZero();
     Eigen::MatrixXd estimations_((H.transpose()*measurements).rows(),measurements.cols()-1);
@@ -113,6 +114,7 @@ test_KFE::matrices test_KFE::data(
 
 void step(test_KFE::matrices& data0,
           Eigen::MatrixXd& out_raw,
+          Eigen::MatrixXd& out_times,
           Eigen::MatrixXd& out_noised_process,
           Eigen::MatrixXd& out_noised_meas,
           Eigen::MatrixXd& est_,
@@ -121,8 +123,8 @@ void step(test_KFE::matrices& data0,
           int measurement_amount)
 {
     // == make measurements ==
-    make_data(out_raw,out_noised_process,out_noised_meas,
-              data0.x0,data0.A/*,measurementModel=H*/,data0.G,data0.Q,data0.Rpos,data0.H,measurement_amount,-1.,1.);
+    make_data(out_raw,out_times,out_noised_process,out_noised_meas,
+              data0.x0,data0.A/*,measurementModel=H*/,data0.G,data0.Q,data0.Rpos,data0.H,6.,measurement_amount,-1.,1.);
     // == estimation ==
     std::pair<Eigen::MatrixXd,Eigen::MatrixXd> est0 = estimator_probab_step(out_noised_meas,data0.P0,data0.A,data0.H,data0.B,data0.u,data0.Q,data0.G,data0.Rpos,0.9);
     est_ = est0.first;
@@ -132,6 +134,7 @@ void step(test_KFE::matrices& data0,
 
 void stat(test_KFE::matrices data0,
           Eigen::MatrixXd& out_raw,
+          Eigen::MatrixXd& out_times,
           Eigen::MatrixXd& out_noised_process,
           Eigen::MatrixXd& out_noised_meas,
           Eigen::MatrixXd& est_,
@@ -146,13 +149,14 @@ void stat(test_KFE::matrices data0,
     for(int i=0;i<iterations_amount;i++)
     {
         out_raw.setZero();
+        out_times.setZero();
         out_noised_process.setZero();
         out_noised_meas.setZero();
         est_.setZero();
         est.setZero();
         err.setZero();
 
-        step(data0,out_raw,out_noised_process,out_noised_meas,est_,est,err,measurement_amount);
+        step(data0,out_raw,out_times,out_noised_process,out_noised_meas,est_,est,err,measurement_amount);
 
         var_err+=err;
         Utils::progress_print(iterations_amount,i,5,"statistic run: ");
@@ -203,6 +207,7 @@ void print_stat(Eigen::MatrixXd& var_err,
 void test_KFE::estimation()
 {
     Eigen::MatrixXd out_raw;
+    Eigen::MatrixXd out_times;
     Eigen::MatrixXd out_noised_process;
     Eigen::MatrixXd out_noised_meas;
     Eigen::MatrixXd est_;
@@ -226,7 +231,7 @@ void test_KFE::estimation()
         std::cout << "exception[" << std::to_string(x) << "]" << std::endl;
     }
 
-    stat(data1,out_raw,out_noised_process,out_noised_meas,est_,est,err,var_err,100,2000);
+    stat(data1,out_raw,out_times,out_noised_process,out_noised_meas,est_,est,err,var_err,100,2000);
 
     print_step<Models::X3B,Models::Z>(out_raw,out_noised_process,out_noised_meas,est_,est,"[vz,y,z,vy,vx,x](X3B): ");
     print_stat<Models::X3B>(var_err,"[vz,y,z,vy,vx,x](X3B): ");
@@ -246,7 +251,7 @@ void test_KFE::estimation()
         std::cout << "exception[" << std::to_string(x) << "]" << std::endl;
     }
 
-    stat(data2,out_raw,out_noised_process,out_noised_meas,est_,est,err,var_err,100,2000);
+    stat(data2,out_raw,out_times,out_noised_process,out_noised_meas,est_,est,err,var_err,100,2000);
 
     print_step<Models::X3A,Models::Z>(out_raw,out_noised_process,out_noised_meas,est_,est,"[x,vx,y,vy,z,vz](X3A): ");
     print_stat<Models::X3A>(var_err,"[x,vx,y,vy,z,vz](X3A): ");

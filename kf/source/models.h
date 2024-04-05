@@ -106,4 +106,13 @@ M HvelModel_3B() {
             1., 0., 0., 0., 0., 0.;
     return Hvel;
 };
+
+template <class M>
+M QModel(double process_var) {
+    M Q(3,3);
+    Q << process_var,         0.,          0.,
+                  0.,process_var,          0.,
+                  0.,         0., process_var;
+    return Q;
+};
 }

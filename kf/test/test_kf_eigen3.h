@@ -5,7 +5,7 @@
 #include <QtCore>
 #include <QObject>
 
-#include<Eigen/Dense>
+#include <Eigen/Dense>
 
 class test_KFE : public QObject
 {

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <iostream>
-#include<eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 
 #include<QApplication>
 #include<QChartView>
@@ -21,7 +21,7 @@ struct MTN2
     MTN2(TYPE t_in,std::string s_in,std::vector<double> v1_in,std::vector<double> v2_in=std::vector<double>(), QColor c_in=Qt::red)
     {v1=v1_in;v2=v2_in;t=t_in;s=s_in;c=c_in;}
 };
-int print_charts_universal3(std::vector<MTN2> vec)
+inline int print_charts_universal3(std::vector<MTN2> vec)
 {
     int i=1;
     QApplication a(i,nullptr);

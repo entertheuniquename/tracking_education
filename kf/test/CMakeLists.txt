@@ -4,6 +4,7 @@ set(CMAKE_AUTOMOC ON)
 
 message("kf_test[1]: установка automoc")
 
+include_directories("/usr/include/eigen3")
 include_directories("/usr/include/x86_64_linux_gnu/qt5")
 include_directories("/usr/include/x86_64_linux_gnu/qt5/QtCore")
 include_directories("/usr/include/x86_64_linux_gnu/qt5/QtCharts")

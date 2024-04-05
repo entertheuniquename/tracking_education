@@ -1,28 +1,38 @@
 #pragma once
 
 #include <iostream>
-#include <eigen3/Eigen/Dense>
-#include<unsupported/Eigen/MatrixFunctions>
+#include <Eigen/Dense>
+//#include<unsupported/Eigen/MatrixFunctions>
 #include "chprinter.h"
-
-#include "Eigen/Dense"
 
 #include "../source/utils.h"
 //====================================================================================
-void make_data(Eigen::MatrixXd& out_raw,
-               Eigen::MatrixXd& out_noised_process,
-               Eigen::MatrixXd& out_noised_meas,
-               Eigen::MatrixXd in_x,
-               Eigen::MatrixXd in_model,
-               Eigen::MatrixXd in_G,
-               Eigen::MatrixXd in_Q,
-               Eigen::MatrixXd in_R,
-               Eigen::MatrixXd in_H,//!!!
-               int iterations,
-               double noise_start=0.,
-               double noise_end=0.)
+inline void make_data(Eigen::MatrixXd& out_raw,
+                      Eigen::MatrixXd& out_times,
+                      Eigen::MatrixXd& out_noised_process,
+                      Eigen::MatrixXd& out_noised_meas,
+                      Eigen::MatrixXd in_x,
+                      Eigen::MatrixXd in_model,
+                      Eigen::MatrixXd in_G,
+                      Eigen::MatrixXd in_Q,
+                      Eigen::MatrixXd in_R,
+                      Eigen::MatrixXd in_H,//!!!
+                      double dt,
+                      int iterations,
+                      double noise_start=0.,
+                      double noise_end=0.)
 {
-    // == make raw =====================================
+    // == make times =================================
+    double time = 0.;
+    out_times.resize(1,iterations);
+    for(int i=0;i<iterations;i++)
+    {
+        out_times(0,i) = time;
+        time+=dt;
+    }
+    // ===============================================
+
+    // == make raw =======================================
     out_raw.resize(in_x.cols(),iterations);
     Eigen::MatrixXd x = in_x.transpose();
     for(int i=0;i<iterations;i++)
