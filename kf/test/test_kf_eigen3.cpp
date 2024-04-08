@@ -1,21 +1,12 @@
 #include "test_kf_eigen3.h"
 #include "data_creator_eigen3.h"
 #include "chprinter.h"
+#include "exceptions.h"
 
 #include "../source/models.h"
 #include "../source/kf_eigen3.h"
 #include "../source/utils.h"
 
-void detx(Eigen::MatrixXd X)
-{
-    if(X.determinant()==0)
-        throw 66;
-}
-void bad_prob_value(double x)
-{
-    if(x<0 || x>1)
-        throw 55;
-}
 
 std::pair<Eigen::MatrixXd,Eigen::MatrixXd> estimator_probab_step(const Eigen::MatrixXd& measurements,
                                                                  const Eigen::MatrixXd& P0,
@@ -29,7 +20,7 @@ std::pair<Eigen::MatrixXd,Eigen::MatrixXd> estimator_probab_step(const Eigen::Ma
                                                                  double target_detection_probab=1)
 {
     // == make pass indexes ==
-    try{bad_prob_value(target_detection_probab);}  catch (int x) {
+    try{Exceptions::bad_prob_value(target_detection_probab);}  catch (int x) {
         std::cout << "exception[" << std::to_string(x) << "]" << std::endl;
     }
     int pass_am = (measurements.cols()-1)*(1-target_detection_probab);
@@ -159,7 +150,7 @@ void stat(test_KFE::matrices data0,
         step(data0,out_raw,out_times,out_noised_process,out_noised_meas,est_,est,err,measurement_amount);
 
         var_err+=err;
-        Utils::progress_print(iterations_amount,i,5,"statistic run: ");
+        Utils::progress_print(iterations_amount,i,5," kfe statistic run: ");
     }
     var_err/=iterations_amount;
     var_err = Utils::sqrt_one_by_one(var_err);
@@ -227,7 +218,7 @@ void test_KFE::estimation()
                           Models::HvelModel_3B<Eigen::MatrixXd>(),
                           {0.,0.,0.,0.,200.,10.});
 
-    try{detx(data1.P0);}  catch (int x) {
+    try{Exceptions::detx(data1.P0);}  catch (int x) {
         std::cout << "exception[" << std::to_string(x) << "]" << std::endl;
     }
 
@@ -247,7 +238,7 @@ void test_KFE::estimation()
                           Models::HvelModel_3A<Eigen::MatrixXd>(),
                           {10.,200.,0.,0.,0.,0.});
 
-    try{detx(data2.P0);}  catch (int x) {
+    try{Exceptions::detx(data2.P0);}  catch (int x) {
         std::cout << "exception[" << std::to_string(x) << "]" << std::endl;
     }
 

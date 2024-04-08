@@ -40,15 +40,16 @@ public:
                                                     in_transition_measurement_model,
                                                     in_measurement.noise);;
     }
-    void step(const Measurement<M>& m) //#TODO - аргументы - потенциал для расширения
+    Measurement<M> step(const Measurement<M>& m) //#TODO - аргументы - потенциал для расширения
     {
 
         double dt = m.timepoint - measurement.timepoint;
+
         M new_transition_state_model = Models::stateModel_3A<M>(dt); //#TODO - X3A - потенциал для расширения
         M new_transition_process_noise_model = Models::GModel_3A<M>(dt); //#TODO - X3A - потенциал для расширения
         M new_transition_measurement_model = Models::measureModel_3A<M>(); //#TODO - X3A - потенциал для расширения
-        M new_measurement = measurement.point;
-        M new_measurement_noise = measurement.noise;
+        M new_measurement = m.point;
+        M new_measurement_noise = m.noise;
 
         estimator->predict(new_transition_state_model,
                            new_transition_process_noise_model,
@@ -58,10 +59,16 @@ public:
                            new_measurement,
                            new_measurement_noise);
 
+        measurement.timepoint = m.timepoint;
+        measurement.point = estimator->get_state();
+        measurement.noise = m.noise;
+
+        return measurement;
     }
-    void step(double timepoint) //#TODO - аргументы - потенциал для расширения
+    Measurement<M> step(double timepoint) //#TODO - аргументы - потенциал для расширения
     {
         double dt = timepoint - measurement.timepoint;
+
         M new_transition_state_model = Models::stateModel_3A<M>(dt); //#TODO - X3A - потенциал для расширения
         M new_transition_process_noise_model = Models::GModel_3A<M>(dt); //#TODO - X3A - потенциал для расширения
         M new_transition_measurement_model = Models::measureModel_3A<M>(); //#TODO - X3A - потенциал для расширения
@@ -69,5 +76,11 @@ public:
         estimator->predict(new_transition_state_model,
                            new_transition_process_noise_model,
                            new_transition_measurement_model);
+
+        measurement.timepoint = timepoint;
+        measurement.point = estimator->get_state();
+
+        return measurement;
     }
+    double get_timepoint(){return measurement.timepoint;}
 };
