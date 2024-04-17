@@ -12,7 +12,8 @@ struct Measurement
 {
     double timepoint;
     M point;
-    M noise;
+    M measurement_noise;
+    M process_noise;
 };
 
 //#[x,vx,y,vy,z,vz] //#TODO - X3A - потенциал для расширения
@@ -38,7 +39,7 @@ public:
                                                     in_process_noise,
                                                     in_transition_process_noise_model,
                                                     in_transition_measurement_model,
-                                                    in_measurement.noise);;
+                                                    in_measurement.measurement_noise);
     }
     Measurement<M> step(const Measurement<M>& m) //#TODO - аргументы - потенциал для расширения
     {
@@ -49,7 +50,7 @@ public:
         M new_transition_process_noise_model = Models::GModel_3A<M>(dt); //#TODO - X3A - потенциал для расширения
         M new_transition_measurement_model = Models::measureModel_3A<M>(); //#TODO - X3A - потенциал для расширения
         M new_measurement = m.point;
-        M new_measurement_noise = m.noise;
+        M new_measurement_noise = m.measurement_noise;
 
         estimator->predict(new_transition_state_model,
                            new_transition_process_noise_model,
@@ -61,7 +62,7 @@ public:
 
         measurement.timepoint = m.timepoint;
         measurement.point = estimator->get_state();
-        measurement.noise = m.noise;
+        measurement.measurement_noise = m.measurement_noise;
 
         return measurement;
     }

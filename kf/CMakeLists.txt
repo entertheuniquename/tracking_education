@@ -10,13 +10,18 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_CXX_COMPILER /usr/bin/g++)
-set(CMAKE_CXX_FLAGS "-std=c++17 -pthread")
+set(CMAKE_CXX_FLAGS "-std=c++17 -pthread -fPIC")
 
 message("kf[2]: установка флагов")
 
 include_directories("/usr/include/eigen3")
 
 message("kf[3]: включение необходимых дирректорий")
+
+find_package(pybind11 REQUIRED)
+if(NOT pybind11_FOUND)
+    message("pybind11 is NOT found:")
+endif()
 
 find_package(Armadillo REQUIRED)
 if(NOT Armadillo_FOUND)
@@ -46,10 +51,11 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${BIN_DIR})
 message("kf[6]: установка дирректорий сборки")
 
 file(GLOB ALL_SRC ${SOURCE_DIR}/* .cpp)
-add_library(${PROJECT_NAME} SHARED ${ALL_SRC})
+add_library(${PROJECT_NAME} STATIC ${ALL_SRC})
 
 message("kf[7]: создание файла библиотеки")
 
+add_subdirectory(bindpy)
 add_subdirectory(test)
 
 message("kf[8]: отработка поддирректорий")

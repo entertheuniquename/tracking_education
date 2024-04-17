@@ -95,7 +95,7 @@ void test_Track::doit()
         std::vector<Measurement<Eigen::MatrixXd>> meases;
         for(int i=0;i<out_noised_meas.cols();i++)
         {
-            Measurement<Eigen::MatrixXd> me{out_times(0,i),out_noised_meas.col(i),data0.Rpos};
+            Measurement<Eigen::MatrixXd> me{out_times(0,i),out_noised_meas.col(i),data0.Rpos,data0.Q};
             meases.push_back(me);
         }
 

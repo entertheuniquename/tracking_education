@@ -1,6 +1,8 @@
 #include "kf_eigen3.h"
 #include "kf_math.h"
 
+#include <iostream>
+
 KFE::KFE(Eigen::MatrixXd in_state,
          Eigen::MatrixXd in_covariance,
          Eigen::MatrixXd in_transition_state_model,

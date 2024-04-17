@@ -19,6 +19,19 @@ M stateModel_3A(double T)
 };
 
 template <class M>
+M stateModel_3Ax(const M& x, double T)
+{
+    M F(6,6);
+    F << 1., T , 0., 0., 0., 0.,
+         0., 1., 0., 0., 0., 0.,
+         0., 0., 1., T , 0., 0.,
+         0., 0., 0., 1., 0., 0.,
+         0., 0., 0., 0., 1., T ,
+         0., 0., 0., 0., 0., 1.;
+    return F*x;
+};
+
+template <class M>
 M stateModel_3B(double T)
 {
     M F(6,6);
@@ -38,6 +51,15 @@ M measureModel_3A() {
          0., 0., 1., 0., 0., 0.,
          0., 0., 0., 0., 1., 0.;
     return H;
+};
+
+template <class M>
+M measureModel_3Ax(const M& x) {
+    M H(3,6);
+    H << 1., 0., 0., 0., 0., 0.,
+         0., 0., 1., 0., 0., 0.,
+         0., 0., 0., 0., 1., 0.;
+    return H*x;
 };
 
 template <class M>
