@@ -3,6 +3,7 @@ set(LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../scripts)
 pybind11_add_module(estimator
     MODULE
         bind_kf.cpp
+        bind_ekf.cpp
         bind_models.cpp
         bindings.cpp
 )

@@ -1,8 +1,8 @@
 #include "../source/models.h"
 
-#include <pybind11-global/pybind11/pybind11.h>
-#include <pybind11-global/pybind11/numpy.h>
-#include <pybind11-global/pybind11/eigen.h>
+#include <pybind11/pybind11.h>
+#include <pybind11/numpy.h>
+#include <pybind11/eigen.h>
 #include <Eigen/Dense>
 
 namespace py = pybind11;
@@ -33,6 +33,13 @@ void bind_models(py::module &m) {
           return Models::measureModel_3Ax<Eigen::MatrixXd>(x);
     }/*,R"pbdoc(
             measureModel3A
+        )pbdoc",
+        py::arg("x")*/
+    );
+    m.def("measureModel_3Bx", [](Eigen::MatrixXd x){
+          return Models::measureModel_3Bx<Eigen::MatrixXd>(x);
+    }/*,R"pbdoc(
+            measureModelBA
         )pbdoc",
         py::arg("x")*/
     );

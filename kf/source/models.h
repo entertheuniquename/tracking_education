@@ -1,5 +1,8 @@
 #pragma once
 
+#include <math.h>
+#include "utils.h"
+
 namespace Models
 {
 enum class X3A{X=0,VX=1,Y=2,VY=3,Z=4,VZ=5};
@@ -60,6 +63,24 @@ M measureModel_3Ax(const M& x) {
          0., 0., 1., 0., 0., 0.,
          0., 0., 0., 0., 1., 0.;
     return H*x;
+};
+
+template <class M>
+M measureModel_3Bx(const M& x, const M& z = M{}) {
+    enum class POSITION{X=0,VX=1,Y=2,VY=3,Z=4,VZ=5};
+    double X = x(static_cast<int>(POSITION::X));
+    double Y = x(static_cast<int>(POSITION::Y));
+    double Z = x(static_cast<int>(POSITION::Z));
+    double elev = atan2(Z, sqrt(Y*Y+X*X));
+    double angle = atan2(Y,X);
+    double range = sqrt(X*X+Y*Y+Z*Z);
+    if (!(z.cols()==0) && !(z.rows()==0))
+    {
+        angle = z(1) + Utils::ComputeAngleDifference(angle, z(1));
+    }
+    M r(1,3);
+    r << elev, angle, range;
+    return r.transpose();
 };
 
 template <class M>

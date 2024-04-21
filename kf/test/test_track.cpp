@@ -1,6 +1,7 @@
 #include "test_track.h"
 #include "data_creator_eigen3.h"
 #include "../source/models.h"
+#include "../source/ekf_eigen3.h"//#TEMP
 #include "exceptions.h"
 #include "chprinter.h"
 

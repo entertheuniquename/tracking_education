@@ -10,11 +10,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_CXX_COMPILER /usr/bin/g++)
+set(CMAKE_C_COMPILER /usr/bin/gcc)
 set(CMAKE_CXX_FLAGS "-std=c++17 -pthread -fPIC")
+
+
 
 message("kf[2]: установка флагов")
 
 include_directories("/usr/include/eigen3")
+include_directories("/usr/local/lib/python3.9/dist-packages")
 
 message("kf[3]: включение необходимых дирректорий")
 
@@ -23,10 +27,61 @@ if(NOT pybind11_FOUND)
     message("pybind11 is NOT found:")
 endif()
 
-find_package(Armadillo REQUIRED)
-if(NOT Armadillo_FOUND)
-    message("Armadillo is NOT found:")
-endif()
+if(pybind11_FOUND)
+    message(STATUS "------------------------------------")
+    message(STATUS "PYBIND11 is FOUND:")
+    message(STATUS "include: ${PYBIND11_INCLUDE_DIRS}")
+    message(STATUS "libraries: ${PYBIND11_LIBRARIES}")
+    message(STATUS "version: ${PYBIND11_VERSION_STRING}")
+    message(STATUS "------------------------------------")
+else(pybind11_FOUND)
+    message("PYBIND11 is NOT found:")
+endif(pybind11_FOUND)
+
+#find_package(BLAS REQUIRED)
+#if(NOT BLAS_FOUND)
+#    message("blas is NOT found:")
+#endif()
+
+#find_package(LAPACK REQUIRED)
+#if(NOT LAPACK_FOUND)
+#    message("lapack is NOT found:")
+#endif()
+
+include_directories("/home/ivan/project/3rd_party/armadillo-12.8.2")
+
+#find_package(Armadillo REQUIRED)
+#if(NOT Armadillo_FOUND)
+#    message("Armadillo is NOT found:")
+#endif()
+
+#
+#if(LAPACK_FOUND)
+#    message(STATUS "------------------------------------")
+#    message(STATUS "LAPACK is FOUND:")
+#    message(STATUS "include: ${LAPACK_INCLUDE_DIRS}")
+#    message(STATUS "libraries: ${LAPACK_LIBRARIES}")
+#    message(STATUS "version: ${LAPACK_VERSION_STRING}")
+#    message(STATUS "------------------------------------")
+#else(Armadillo_FOUND)
+#    message("Armadillo is NOT found:")
+#endif(Armadillo_FOUND)
+
+#if(Armadillo_FOUND)
+#    message(STATUS "------------------------------------")
+#    message(STATUS "Armadillo is FOUND:")
+#    message(STATUS "include: ${ARMADILLO_INCLUDE_DIRS}")
+#    message(STATUS "libraries: ${ARMADILLO_LIBRARIES}")
+#    message(STATUS "version: ${ARMADILLO_VERSION_STRING}")
+#    message(STATUS "------------------------------------")
+#else(Armadillo_FOUND)
+#    message("Armadillo is NOT found:")
+#endif(Armadillo_FOUND)
+
+#include_directories("/usr/lib")
+#include_directories("/usr/include/armadillo_bits")
+#include_directories("/usr/lib/x86_64-linux-gnu")
+#
 
 find_package(Eigen3 REQUIRED)
 if(NOT Eigen3_FOUND)
@@ -59,3 +114,7 @@ add_subdirectory(bindpy)
 add_subdirectory(test)
 
 message("kf[8]: отработка поддирректорий")
+
+target_link_libraries(${PROJECT_NAME} PRIVATE armadillo)
+
+#target_compile_options(kf PRIVATE "-larmadillo -lblas -llapack")
