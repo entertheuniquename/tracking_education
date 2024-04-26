@@ -80,15 +80,14 @@ def make_kalman_filter(measurement):
     kf = e.BindKFE(x0, P0, e.stateModel_3A(T), Q0, G, Hp, R)
     return kf
 
-
 def step(Z, make_estimator):
     estimator = make_estimator(Z[:, 0][:, np.newaxis])
     est = np.zeros((initialState.shape[0], Z.shape[1]-1))
     for col in range(est.shape[1]):
         z = Z[:, col + 1]
-        xp = estimator.predict(e.stateModel_3A(T),G,e.measureModel_3A())
+        xp = estimator.predict(T)
         m1 = np.array([z[0], z[1], z[2]])
-        xc = estimator.correct(e.measureModel_3A(),m1.T,R)
+        xc = estimator.correct(m1.T)
         est[:, col] = np.squeeze(xc[:])
     return est
 

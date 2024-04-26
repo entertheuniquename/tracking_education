@@ -1,13 +1,43 @@
 #pragma once
 
+#include "utils.h"
+
 #include<iostream>
 #include <Eigen/Dense>
+namespace Estimator
+{
+template <class M = Eigen::MatrixXd>
+struct KalmanFilterMath
+{
+public:
+    void kf_predict(M& xp,const M& A,const M& x,const M& B,const M& u,
+                    M& Pp,const M& P,const M& G,const M& Q,
+                    M& zp,const M& H)
+    {
+        xp = A*x + B*u;
+        Pp = A*P*Utils::transpose(A) + G*Q*Utils::transpose(G);
+        Pp = (Pp + Utils::transpose(Pp))/2.;
+        zp = H*xp;
+    }
 
-class KFE
+    void kf_correct(const M& H,const M& Pp,const M& R,
+                    M& xc,const M& xp,const M& z,const M& zp,
+                    M& Pc)
+    {
+        M S = H*Pp*Utils::transpose(H) + R;
+        M K = Pp*Utils::transpose(H)*Utils::inverse(S);
+          xc = xp + K * (z - zp);
+          Pc = Pp - K * S * Utils::transpose(K);
+          Pc = (Pc + Utils::transpose(Pc))/2.;
+    }
+};
+
+template<class M, class SM, class MM>
+class KFE : public KalmanFilterMath<M>
 {
 private:
-    Eigen::MatrixXd state;//x
-    Eigen::MatrixXd covariance;//P
+    Eigen::MatrixXd state;//x0
+    Eigen::MatrixXd covariance;//P0
     Eigen::MatrixXd transition_state_model;//A
     Eigen::MatrixXd process_noise;//Q
     Eigen::MatrixXd transition_process_noise_model;//G
@@ -21,29 +51,73 @@ public:
         Eigen::MatrixXd in_process_noise,
         Eigen::MatrixXd in_transition_process_noise_model,
         Eigen::MatrixXd in_transition_measurement_model,
-        Eigen::MatrixXd in_measurement_noise);
-    std::pair<Eigen::MatrixXd,Eigen::MatrixXd> predict(const Eigen::MatrixXd& in_transition_state_model,
-                                                       const Eigen::MatrixXd& in_process_noise,
-                                                       const Eigen::MatrixXd& in_transition_process_noise_model,
-                                                       const Eigen::MatrixXd& in_transition_measurement_model,
-                                                       const Eigen::MatrixXd& in_control_input,
-                                                       const Eigen::MatrixXd& in_control_model);
-    std::pair<Eigen::MatrixXd,Eigen::MatrixXd> predict(const Eigen::MatrixXd& in_transition_state_model,
-                                                       const Eigen::MatrixXd& in_transition_process_noise_model,
-                                                       const Eigen::MatrixXd& in_transition_measurement_model);
-    std::pair<Eigen::MatrixXd,Eigen::MatrixXd> predict(const Eigen::MatrixXd& in_transition_state_model,
-                                                       const Eigen::MatrixXd& in_transition_measurement_model,
-                                                       const Eigen::MatrixXd& in_control_input,
-                                                       const Eigen::MatrixXd& in_control_model);
-    std::pair<Eigen::MatrixXd,Eigen::MatrixXd> predict();
-    std::pair<Eigen::MatrixXd,Eigen::MatrixXd> correct(const Eigen::MatrixXd& in_transition_measurement_model,
-                                                       const Eigen::MatrixXd& in_measurement,
-                                                       const Eigen::MatrixXd& in_measurement_noise);
-    std::pair<Eigen::MatrixXd,Eigen::MatrixXd> correct(const Eigen::MatrixXd& in_transition_measurement_model,
-                                                       const Eigen::MatrixXd& in_measurement);
-    std::pair<Eigen::MatrixXd,Eigen::MatrixXd> correct(const Eigen::MatrixXd& in_measurement);
+        Eigen::MatrixXd in_measurement_noise):
+        state(in_state),
+        covariance(in_covariance),
+        transition_state_model(in_transition_state_model),
+        process_noise(in_process_noise),
+        transition_process_noise_model(in_transition_process_noise_model),
+        transition_measurement_model(in_transition_measurement_model),
+        measurement_noise(in_measurement_noise)
+    {}
 
     Eigen::MatrixXd get_state(){return state;}
     Eigen::MatrixXd get_covariance(){return covariance;}
 
+    std::pair<Eigen::MatrixXd,Eigen::MatrixXd> predict(double dt)
+    {
+        Eigen::MatrixXd state_predict;
+        Eigen::MatrixXd covariance_predict;
+
+        Eigen::MatrixXd control_model(this->transition_state_model.rows(),this->transition_state_model.cols());
+        control_model.setZero();
+        Eigen::MatrixXd control_input(this->state.rows(),this->state.cols());
+        control_input.setZero();
+
+        SM sm;
+        MM mm;
+
+        const Eigen::MatrixXd& x = this->state;
+        const Eigen::MatrixXd& A = sm(dt);
+        const Eigen::MatrixXd& B = control_model;
+        const Eigen::MatrixXd& u = control_input;
+        const Eigen::MatrixXd& P = this->covariance;
+        const Eigen::MatrixXd& Q = this->process_noise;
+        const Eigen::MatrixXd& G = this->transition_process_noise_model;
+        const Eigen::MatrixXd& H = mm();
+              Eigen::MatrixXd& xp = state_predict;
+              Eigen::MatrixXd& Pp = covariance_predict;
+              Eigen::MatrixXd& zp = this->measurement_predict;
+
+        KalmanFilterMath<M>::kf_predict(xp,A,x,B,u,Pp,P,G,Q,zp,H);
+
+        state = state_predict;
+        covariance = covariance_predict;
+
+        return std::make_pair(state,covariance);
+    }
+    std::pair<Eigen::MatrixXd,Eigen::MatrixXd> correct(const Eigen::MatrixXd& in_measurement)
+    {
+        Eigen::MatrixXd state_correct;
+        Eigen::MatrixXd covariance_correct;;
+
+        MM mm;
+
+        const Eigen::MatrixXd& Pp = this->covariance;
+        const Eigen::MatrixXd& H = mm();
+        const Eigen::MatrixXd& R = this->measurement_noise;
+        const Eigen::MatrixXd& xp = this->state;
+        const Eigen::MatrixXd& zp = this->measurement_predict;
+        const Eigen::MatrixXd& z = in_measurement;
+              Eigen::MatrixXd& xc = state_correct;
+              Eigen::MatrixXd& Pc = covariance_correct;
+
+        KalmanFilterMath<M>::kf_correct(H,Pp,R,xc,xp,z,zp,Pc);
+
+        state = state_correct;
+        covariance = covariance_correct;
+
+        return std::make_pair(state,covariance);
+    }
 };
+}

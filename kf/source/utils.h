@@ -8,6 +8,7 @@
 #include <armadillo>
 #include <complex>
 #include <algorithm>
+//#include <math.h>
 
 using namespace Eigen;
 
@@ -236,6 +237,15 @@ inline Eigen::MatrixXd cholPSD_A(const Eigen::MatrixXd& A1)
 
 inline double ComputeAngleDifference(double a1, double a2) {
     return std::arg(std::complex<double>(cos(a1 - a2), sin(a1 - a2)));
+}
+
+inline double deg2rad(double x)
+{
+    return (M_PI/180.)*x;
+}
+inline double rad2deg(double x)
+{
+    return (180./M_PI)*x;
 }
 
 }

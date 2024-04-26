@@ -209,11 +209,15 @@ private:
     }
 };
 
-struct EKFE : public ExtendedKalmanFilterMath<>
+template<class M,class SM, class MM>
+struct EKFE : public ExtendedKalmanFilterMath<M>
 {
-
+private:
+    Eigen::MatrixXd sqrtStateCovariance;
+    Eigen::MatrixXd sqrtProcessNoise;
+    Eigen::MatrixXd sqrtMeasurementNoise;
     Eigen::MatrixXd State;
-
+public:
     EKFE(Eigen::MatrixXd state,
          Eigen::MatrixXd covariance,
          Eigen::MatrixXd processNoise,
@@ -224,40 +228,6 @@ struct EKFE : public ExtendedKalmanFilterMath<>
         SetProcessNoise(processNoise);
         SetMeasurementNoise(measureNoise);
     }
-
-    template <class TypeFuncStateTransition,
-              class ...TypeParam>
-    std::pair<Eigen::MatrixXd, Eigen::MatrixXd> predict(TypeFuncStateTransition stateModel,TypeParam ...param)
-    {
-        auto pred = ExtendedKalmanFilterMath<>::predict(sqrtProcessNoise,
-                                                        State,
-                                                        sqrtStateCovariance,
-                                                        stateModel,
-                                                        nullptr,
-                                                        param...);
-        State = pred.x;
-        sqrtStateCovariance = pred.S;
-        return std::make_pair(State, GetStateCovariance());
-    }
-
-    template <class TypeFuncMeasurementTransition,
-              class ...TypeParam>
-    std::pair<Eigen::MatrixXd, Eigen::MatrixXd> correct(const Eigen::MatrixXd& measurement,
-                                                            TypeFuncMeasurementTransition measureModel,
-                                                            TypeParam ...param)
-    {
-        auto corr = ExtendedKalmanFilterMath<>::correct(measurement,
-                                                        sqrtMeasurementNoise,
-                                                        State,
-                                                        sqrtStateCovariance,
-                                                        measureModel,
-                                                        nullptr,
-                                                        param...);
-        State = corr.first;
-        sqrtStateCovariance = corr.second;
-        return std::make_pair(State, GetStateCovariance());
-    }
-
 
     EKFE& SetStateCovariance(const Eigen::MatrixXd& StateCovariance)
     {
@@ -292,10 +262,37 @@ struct EKFE : public ExtendedKalmanFilterMath<>
         return sqrtMeasurementNoise * Utils::transpose(sqrtMeasurementNoise);
     }
 
-private:
-    Eigen::MatrixXd sqrtStateCovariance;
-    Eigen::MatrixXd sqrtProcessNoise;
-    Eigen::MatrixXd sqrtMeasurementNoise;
+    template <class ...TypeParam>
+    std::pair<Eigen::MatrixXd, Eigen::MatrixXd> predict(double dt,TypeParam ...param)
+    {
+        auto pred = ExtendedKalmanFilterMath<>::predict(sqrtProcessNoise,
+                                                        State,
+                                                        sqrtStateCovariance,
+                                                        SM(),
+                                                        nullptr,
+                                                        dt);
+        State = pred.x;
+        sqrtStateCovariance = pred.S;
+        return std::make_pair(State, GetStateCovariance());
+    }
+
+    template <class ...TypeParam>
+    std::pair<Eigen::MatrixXd, Eigen::MatrixXd> correct(const Eigen::MatrixXd& measurement,
+                                                            TypeParam ...param)
+    {
+        auto corr = ExtendedKalmanFilterMath<>::correct(measurement,
+                                                        sqrtMeasurementNoise,
+                                                        State,
+                                                        sqrtStateCovariance,
+                                                        MM(),
+                                                        nullptr,
+                                                        measurement//#TODO! - сделать через параметр
+                                                        /*param...*/);//#TODO!
+        State = corr.first;
+        sqrtStateCovariance = corr.second;
+        return std::make_pair(State, GetStateCovariance());
+    }
+
 };
 
 }

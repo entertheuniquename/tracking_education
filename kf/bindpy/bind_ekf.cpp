@@ -1,12 +1,11 @@
 #include "bind_ekf.h"
-#include "../source/models.h"
 
 namespace py = pybind11;
 
 class BindEKFE
 {
 private:
-    Estimator::EKFE ekfe;
+    Estimator::EKFE<Eigen::MatrixXd,Models::StateModelZ<Eigen::MatrixXd>,Models::MeasureModelZ<Eigen::MatrixXd>> ekfe;
 public:
 
     BindEKFE(Eigen::MatrixXd in_state,
@@ -20,13 +19,13 @@ public:
 
     Eigen::MatrixXd predEKFE(double dt)
     {
-        return ekfe.predict(Models::stateModel_3Ax<Eigen::MatrixXd>, dt).first;
+        return ekfe.predict(dt,0).first;//#! 0- без нуля не получается, хотя параметр должен быть необязательным
     }
 
     Eigen::MatrixXd corrEKFE(const Eigen::MatrixXd &z)
     {
 
-        return ekfe.correct(z, Models::measureModel_3Bx<Eigen::MatrixXd>,z).first;
+        return ekfe.correct(z,z).first;
     }
 };
 

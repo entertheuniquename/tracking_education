@@ -5,7 +5,7 @@ namespace py = pybind11;
 class BindKFE
 {
 private:
-    KFE kfe;
+    Estimator::KFE<Eigen::MatrixXd,Models::StateModelA<Eigen::MatrixXd>,Models::MeasureModelA<Eigen::MatrixXd>> kfe;
 public:
 
     BindKFE(Eigen::MatrixXd in_state,
@@ -23,14 +23,14 @@ public:
             in_transition_measurement_model,
             in_measurement_noise){}
 
-    Eigen::MatrixXd predKFE(const Eigen::MatrixXd &a,const Eigen::MatrixXd &g,const Eigen::MatrixXd &m)
+    Eigen::MatrixXd predKFE(double dt)
     {
-        return kfe.predict(a,g,m).first;
+        return kfe.predict(dt).first;
     }
 
-    Eigen::MatrixXd corrKFE(const Eigen::MatrixXd &m,const Eigen::MatrixXd &z,const Eigen::MatrixXd &r)
+    Eigen::MatrixXd corrKFE(const Eigen::MatrixXd &z)
     {
-        return kfe.correct(m,z,r).first;
+        return kfe.correct(z).first;
     }
 };
 
