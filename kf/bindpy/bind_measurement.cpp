@@ -8,12 +8,12 @@ class BindMeasurement
 private:
     Measurement<> meas;
 public:
-    BindMeasurement(double t, Eigen::MatrixXd p/*, Eigen::MatrixXd m*/):
-        meas(t,p/*,m*/){}
+    BindMeasurement(double t, Eigen::MatrixXd p):
+        meas({t,p}){}
 };
 
 void bind_measurement(pybind11::module &m)
 {
     py::class_<BindMeasurement>(m, "BindMeasurement")
-        .def(py::init<double,Eigen::MatrixXd/*,Eigen::MatrixXd*/>());
+        .def(py::init<double,Eigen::MatrixXd>());
 }

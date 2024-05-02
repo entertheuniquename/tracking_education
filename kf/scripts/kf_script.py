@@ -43,7 +43,7 @@ def make_true_data(x0):
     X = np.zeros((x0.shape[0], 100))
     X[:, 0] = x0.T
     for i in range(X.shape[1]-1):
-        xx = e.stateModel_3Ax(np.copy(X[:, i]),T)
+        xx = e.stateModel_CVx(np.copy(X[:, i]),T)
         xx1 = xx.flatten()
         X[:, i+1] = xx.flatten()
     return X
@@ -61,7 +61,7 @@ Xn = add_process_noise(X,Q)
 def make_meas(X, R):
     Z = np.zeros((R.shape[0], X.shape[1]))
     for i in range(Z.shape[1]):
-        zz = e.measureModel_3Ax(np.copy(X[:, i]))#<- здесь[x]
+        zz = e.measureModel_XXx(np.copy(X[:, i]))#<- здесь[x]
         Z[:, i] = zz.flatten()
     Zn = Z + np.sqrt(R) @ np.random.normal(loc=0, scale=math.sqrt(1.0), size=(Z.shape[0], Z.shape[1]))
     return Zn
@@ -77,7 +77,7 @@ def make_kalman_filter(measurement):
                    [0, 0, 0, 0, 0, 1]])
     x0 = Hp.T@measurement
     P0  = Hp.T@R@Hp + Hv.T@Rvel@Hv;
-    kf = e.BindKFE(x0, P0, e.stateModel_3A(T), Q0, G, Hp, R)
+    kf = e.BindKFE(x0, P0, e.stateModel_CV(T), Q0, G, Hp, R)
     return kf
 
 def step(Z, make_estimator):

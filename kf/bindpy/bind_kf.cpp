@@ -5,7 +5,7 @@ namespace py = pybind11;
 class BindKFE
 {
 private:
-    Estimator::KFE<Eigen::MatrixXd,Models::StateModelA<Eigen::MatrixXd>,Models::MeasureModelA<Eigen::MatrixXd>> kfe;
+    Estimator::KFE<Eigen::MatrixXd,Models::StateModel_CV<Eigen::MatrixXd>,Models::MeasureModel_XvXYvYZvZ_XYZ<Eigen::MatrixXd>> kfe;
 public:
 
     BindKFE(Eigen::MatrixXd in_state,

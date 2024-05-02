@@ -21,9 +21,9 @@ class BindTrackKFE
 {
 private:
     Track<Eigen::MatrixXd,
-          Estimator::KFE<Eigen::MatrixXd,Models::StateModelA<Eigen::MatrixXd>,Models::MeasureModelA<Eigen::MatrixXd>>,
-          EstimatorInitKFE<Eigen::MatrixXd,Models::StateModelA<Eigen::MatrixXd>,Models::MeasureModelA<Eigen::MatrixXd>>,
-          Models::StateModelA<Eigen::MatrixXd>,Models::MeasureModelA<Eigen::MatrixXd>> track;
+          Estimator::KFE<Eigen::MatrixXd,Models::StateModel_CV<Eigen::MatrixXd>,Models::MeasureModel_XvXYvYZvZ_XYZ<Eigen::MatrixXd>>,
+          EstimatorInitKFE<Eigen::MatrixXd,Models::StateModel_CV<Eigen::MatrixXd>,Models::MeasureModel_XvXYvYZvZ_XYZ<Eigen::MatrixXd>>,
+          Models::StateModel_CV<Eigen::MatrixXd>,Models::MeasureModel_XvXYvYZvZ_XYZ<Eigen::MatrixXd>> track;
 public:
 
     BindTrackKFE(const py::tuple& tu):
@@ -43,9 +43,9 @@ class BindTrackEKFE
 {
 private:
     Track<Eigen::MatrixXd,
-    Estimator::EKFE<Eigen::MatrixXd,Models::StateModelZ<Eigen::MatrixXd>,Models::MeasureModelZ<Eigen::MatrixXd>>,
-    EstimatorInitEKFE<Eigen::MatrixXd,Models::StateModelZ<Eigen::MatrixXd>,Models::MeasureModelZ<Eigen::MatrixXd>>,
-    Models::StateModelZ<Eigen::MatrixXd>,Models::MeasureModelZ<Eigen::MatrixXd>> track;
+    Estimator::EKFE<Eigen::MatrixXd,Models::StateModel_CV<Eigen::MatrixXd>,Models::MeasureModel_XvXYvYZvZ_EAR<Eigen::MatrixXd>>,
+    EstimatorInitEKFE<Eigen::MatrixXd,Models::StateModel_CV<Eigen::MatrixXd>,Models::MeasureModel_XvXYvYZvZ_EAR<Eigen::MatrixXd>>,
+    Models::StateModel_CV<Eigen::MatrixXd>,Models::MeasureModel_XvXYvYZvZ_EAR<Eigen::MatrixXd>> track;
 public:
 
     BindTrackEKFE(const py::tuple& tu):

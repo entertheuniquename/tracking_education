@@ -40,7 +40,7 @@ def make_true_data(x0):
     X = np.zeros((x0.shape[0], 100))
     X[:, 0] = x0.T
     for i in range(X.shape[1]-1):
-        xx = e.stateModel_3Ax(np.copy(X[:, i]),T)
+        xx = e.stateModel_CVx(np.copy(X[:, i]),T)
         xx1 = xx.flatten()
         X[:, i+1] = xx.flatten()
     return X
@@ -59,7 +59,7 @@ def make_meas_pol(X, R):
     Z = np.zeros((R.shape[0], X.shape[1]))
     for i in range(Z.shape[1]):
         xx = np.copy(X[:, i])
-        zz = e.measureModel_3Bx(np.copy(X[:, i]))
+        zz = e.measureModel_XRx(np.copy(X[:, i]))
         Z[:, i] = zz.flatten()
     Zn = Z + np.sqrt(R) @ np.random.normal(loc=0, scale=math.sqrt(1.0), size=(Z.shape[0], Z.shape[1]))
     return Zn

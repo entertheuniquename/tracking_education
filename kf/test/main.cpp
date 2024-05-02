@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
     //                                 7., 8., 9.;
     /////////////////////////////////////////////////////////
     /// ESTIMATOR_INIT
-    EstimatorInitKFE<Eigen::MatrixXd,Models::StateModelA<Eigen::MatrixXd>,Models::MeasureModelA<Eigen::MatrixXd>> eikfe(measurement);
+    EstimatorInitKFE<Eigen::MatrixXd,Models::StateModel_CV<Eigen::MatrixXd>,Models::MeasureModel_XvXYvYZvZ_XYZ<Eigen::MatrixXd>> eikfe(measurement);
     std::cout << "eikfe.SM:" << std::endl << eikfe.SM << std::endl;
     std::cout << "eikfe.MM:" << std::endl << eikfe.MM << std::endl;
     std::cout << "eikfe.GM:" << std::endl << eikfe.GM << std::endl;
@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
     std::cout << "eikfe.P0:" << std::endl << eikfe.P0 << std::endl;
     std::cout << "eikfe.x0:" << std::endl << eikfe.x0 << std::endl;
 
-    EstimatorInitEKFE<Eigen::MatrixXd,Models::StateModelZ<Eigen::MatrixXd>,Models::MeasureModelZ<Eigen::MatrixXd>> eiekfe(measurement);
+    EstimatorInitEKFE<Eigen::MatrixXd,Models::StateModel_CV<Eigen::MatrixXd>,Models::MeasureModel_XvXYvYZvZ_EAR<Eigen::MatrixXd>> eiekfe(measurement);
     std::cout << "eiekfe.R:" << std::endl << eiekfe.R << std::endl;
     std::cout << "eiekfe.Q:" << std::endl << eiekfe.Q << std::endl;
     std::cout << "eiekfe.P0:" << std::endl << eiekfe.P0 << std::endl;
@@ -33,17 +33,17 @@ int main(int argc, char *argv[])
     /////////////////////////////////////////////////////////
     /// TRACK
     Track<Eigen::MatrixXd,
-          Estimator::KFE<Eigen::MatrixXd,Models::StateModelA<Eigen::MatrixXd>,Models::MeasureModelA<Eigen::MatrixXd>>,
-          EstimatorInitKFE<Eigen::MatrixXd,Models::StateModelA<Eigen::MatrixXd>,Models::MeasureModelA<Eigen::MatrixXd>>,
-          Models::StateModelA<Eigen::MatrixXd>,Models::MeasureModelA<Eigen::MatrixXd>>
+          Estimator::KFE<Eigen::MatrixXd,Models::StateModel_CV<Eigen::MatrixXd>,Models::MeasureModel_XvXYvYZvZ_XYZ<Eigen::MatrixXd>>,
+          EstimatorInitKFE<Eigen::MatrixXd,Models::StateModel_CV<Eigen::MatrixXd>,Models::MeasureModel_XvXYvYZvZ_XYZ<Eigen::MatrixXd>>,
+          Models::StateModel_CV<Eigen::MatrixXd>,Models::MeasureModel_XvXYvYZvZ_XYZ<Eigen::MatrixXd>>
             tkfe(measurement);
     tkfe.step(measurement);
     tkfe.step(6.);
 
     Track<Eigen::MatrixXd,
-          Estimator::EKFE<Eigen::MatrixXd,Models::StateModelZ<Eigen::MatrixXd>,Models::MeasureModelZ<Eigen::MatrixXd>>,
-          EstimatorInitEKFE<Eigen::MatrixXd,Models::StateModelZ<Eigen::MatrixXd>,Models::MeasureModelZ<Eigen::MatrixXd>>,
-          Models::StateModelZ<Eigen::MatrixXd>,Models::MeasureModelZ<Eigen::MatrixXd>>
+          Estimator::EKFE<Eigen::MatrixXd,Models::StateModel_CV<Eigen::MatrixXd>,Models::MeasureModel_XvXYvYZvZ_EAR<Eigen::MatrixXd>>,
+          EstimatorInitEKFE<Eigen::MatrixXd,Models::StateModel_CV<Eigen::MatrixXd>,Models::MeasureModel_XvXYvYZvZ_EAR<Eigen::MatrixXd>>,
+          Models::StateModel_CV<Eigen::MatrixXd>,Models::MeasureModel_XvXYvYZvZ_EAR<Eigen::MatrixXd>>
             tekfe(measurement);
     tekfe.step(measurement);
     tekfe.step(6.);

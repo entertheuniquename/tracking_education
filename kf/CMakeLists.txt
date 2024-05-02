@@ -5,7 +5,7 @@ project(kf VERSION 1.0 LANGUAGES C CXX)
 
 message("kf[1]: установка названия и версии проекта")
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 

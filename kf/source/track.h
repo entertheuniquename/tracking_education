@@ -51,7 +51,9 @@ struct EstimatorInitKFE
                        0., process_var,          0.,
                        0.,          0., process_var;
 
-        GM = Models::GModel_3A<M>(dt);//#!
+        Models::GModel_XvXYvYZvZ<M> gm;
+
+        GM = gm(dt);
         SM = sm(dt);
         MM = mm();
 
@@ -89,9 +91,9 @@ struct EstimatorInitEKFE
     StateModel SM;
     MeasureModel MM;
 
-    std::unique_ptr<Estimator::EKFE<Eigen::MatrixXd,Models::StateModelZ<Eigen::MatrixXd>,Models::MeasureModelZ<Eigen::MatrixXd>>> make_estimator()
+    std::unique_ptr<Estimator::EKFE<Eigen::MatrixXd,StateModel,MeasureModel>> make_estimator()
     {
-        return std::make_unique<Estimator::EKFE<Eigen::MatrixXd,Models::StateModelZ<Eigen::MatrixXd>,Models::MeasureModelZ<Eigen::MatrixXd>>>(x0,P0,Q,R);
+        return std::make_unique<Estimator::EKFE<Eigen::MatrixXd,StateModel,MeasureModel>>(x0,P0,Q,R);
     }
 
     EstimatorInitEKFE(const Measurement<M>& measurement)
@@ -106,7 +108,7 @@ struct EstimatorInitEKFE
         double dt = 6.0;//откуда?
         //-------------------------------------------------------------------------
 
-        Models::GModelZ<Eigen::MatrixXd> gm;
+        Models::GModel_XvXYvYZvZ<Eigen::MatrixXd> gm;
         StateModel sm;
         MeasureModel mm;
 

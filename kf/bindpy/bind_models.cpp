@@ -8,39 +8,19 @@
 namespace py = pybind11;
 
 void bind_models(py::module &m) {
-    m.def("stateModel_3A", [](double dt){
-        return Models::stateModel_3A<Eigen::MatrixXd>(dt);
-    }/*,R"pbdoc(
-          stateModel_3A
-      )pbdoc",
-      py::arg("dt")*/
-    );
-    m.def("stateModel_3Ax", [](Eigen::MatrixXd x,double dt){
-        return Models::stateModel_3Ax<Eigen::MatrixXd>(x,dt);
-    }/*,R"pbdoc(
-          stateModel_3Ax
-      )pbdoc",
-      py::arg("dt")*/
-    );
-    m.def("measureModel_3A", [](){
-          return Models::measureModel_3A<Eigen::MatrixXd>();
-    }/*,R"pbdoc(
-            measureModel3A
-        )pbdoc",
-        py::arg("x")*/
-    );
-    m.def("measureModel_3Ax", [](Eigen::MatrixXd x){
-          return Models::measureModel_3Ax<Eigen::MatrixXd>(x);
-    }/*,R"pbdoc(
-            measureModel3A
-        )pbdoc",
-        py::arg("x")*/
-    );
-    m.def("measureModel_3Bx", [](Eigen::MatrixXd x){
-          return Models::measureModel_3Bx<Eigen::MatrixXd>(x);
-    }/*,R"pbdoc(
-            measureModelBA
-        )pbdoc",
-        py::arg("x")*/
-    );
+    m.def("stateModel_CV", [](double dt){
+        Models::StateModel_CV<Eigen::MatrixXd> sm;
+        return sm(dt);});
+    m.def("stateModel_CVx", [](Eigen::MatrixXd x,double dt){
+        Models::StateModel_CV<Eigen::MatrixXd> sm;
+        return sm(x,dt);});
+    m.def("measureModel_XX", [](){
+          Models::MeasureModel_XvXYvYZvZ_XYZ<Eigen::MatrixXd> mm;
+          return mm();});
+    m.def("measureModel_XXx", [](Eigen::MatrixXd x){
+          Models::MeasureModel_XvXYvYZvZ_XYZ<Eigen::MatrixXd> mm;
+          return mm(x);});
+    m.def("measureModel_XRx", [](Eigen::MatrixXd x){
+          Models::MeasureModel_XvXYvYZvZ_EAR<Eigen::MatrixXd> mm;
+          return mm(x); });
 }

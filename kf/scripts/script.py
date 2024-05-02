@@ -43,7 +43,7 @@ def make_true_data(x0):
     X = np.zeros((x0.shape[0], 100))
     X[:, 0] = x0.T
     for i in range(X.shape[1]-1):
-        xx = e.stateModel_3Ax(np.copy(X[:, i]),T)
+        xx = e.stateModel_CVx(np.copy(X[:, i]),T)
         xx1 = xx.flatten()
         X[:, i+1] = xx.flatten()
     return X
@@ -61,7 +61,7 @@ Xn = add_process_noise(X,Q)
 def make_meas(X, R):
     Z = np.zeros((R.shape[0], X.shape[1]))
     for i in range(Z.shape[1]):
-        zz = e.measureModel_3Ax(np.copy(X[:, i]))#<- здесь[x]
+        zz = e.measureModel_XXx(np.copy(X[:, i]))#<- здесь[x]
         Z[:, i] = zz.flatten()
     Zn = Z + np.sqrt(R) @ np.random.normal(loc=0, scale=math.sqrt(1.0), size=(Z.shape[0], Z.shape[1]))
     return Zn
@@ -77,7 +77,7 @@ def make_kalman_filter(measurement):
                    [0, 0, 0, 0, 0, 1]])
     x0 = Hp.T@measurement
     P0  = Hp.T@R@Hp + Hv.T@Rvel@Hv;
-    kf = e.BindKFE(x0, P0, e.stateModel_3A(T), Q0, G, Hp, R)
+    kf = e.BindKFE(x0, P0, e.stateModel_CV(T), Q0, G, Hp, R)
     return kf
 
 
@@ -100,7 +100,7 @@ def make_meas_pol(X, R):
     Z = np.zeros((R.shape[0], X.shape[1]))
     for i in range(Z.shape[1]):
         xx = np.copy(X[:, i])
-        zz = e.measureModel_3Bx(np.copy(X[:, i]))
+        zz = e.measureModel_XRx(np.copy(X[:, i]))
         Z[:, i] = zz.flatten()
     Zn = Z + np.sqrt(R) @ np.random.normal(loc=0, scale=math.sqrt(1.0), size=(Z.shape[0], Z.shape[1]))
     return Zn
@@ -130,15 +130,11 @@ def rot_y(a):
     return R
 
 def sph2cart(measurement):
-    print("sph2cart.measurement:")
-    print(measurement)
     cart = np.zeros(measurement.shape)
     for i in range(measurement.shape[1]):
         cart[0, i] = measurement[2, i] * math.cos(measurement[1, i]) * math.cos(measurement[0, i])
         cart[1, i] = measurement[2, i] * math.sin(measurement[1, i]) * math.cos(measurement[0, i])
         cart[2, i] = measurement[2, i] * math.sin(measurement[0, i])
-    print("sph2cart.cart:")
-    print(cart)
     return cart
 
 cart_pol = sph2cart(Zn_pol)
@@ -187,18 +183,9 @@ def make_kalman_filter_pol(measurement):
     Hp = np.array([[1, 0, 0, 0, 0, 0],
                    [0, 0, 1, 0, 0, 0],
                    [0, 0, 0, 0, 1, 0]])
-
-    print("make_kalman_filter_pol.measurement:")
-    print(measurement)
     x0 = sph2cart(measurement)
-    print("make_kalman_filter_pol.x0:")
-    print(x0)
     x0 = Hp.T@x0
-    print("make_kalman_filter_pol.x0':")
-    print(x0)
     P0  = make_cartcov(measurement, Rpol)
-    print("make_kalman_filter_pol.P0:")
-    print(P0)
     ekf = e.BindEKFE(x0, P0, Q, Rpol)
     return ekf
 
