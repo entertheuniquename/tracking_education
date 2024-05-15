@@ -185,7 +185,6 @@ public:
 
     std::pair<Eigen::MatrixXd,Eigen::MatrixXd> predict(double dt)
     {
-        //std::cout << "predict_x" << std::endl;
         Eigen::MatrixXd state_predict;
         Eigen::MatrixXd covariance_predict;
 
@@ -219,7 +218,6 @@ public:
 
     std::pair<Eigen::MatrixXd,Eigen::MatrixXd> correct(const Eigen::MatrixXd& in_measurement)
     {
-        //std::cout << "correct_x" << std::endl;
         Eigen::MatrixXd state_correct;
         Eigen::MatrixXd covariance_correct;;
 

@@ -84,7 +84,7 @@ struct MeasureModel_XvXYvYZvZ_EAR
 template <class M>
 struct MeasureModel_XvXYvYZvZ_XYZ
 {
-    M operator()(const M& x)
+    M operator()(const M& x, const M& z = M{})//#TEMP z - для универсализации. Нужно по-другому обыграть.
     {
         M H(3,6);
         H << 1., 0., 0., 0., 0., 0.,
@@ -105,7 +105,7 @@ struct MeasureModel_XvXYvYZvZ_XYZ
 template <class M>
 struct MeasureModel_XvXYvYZvZW_XYZ
 {
-    M operator()(const M& x)
+    M operator()(const M& x, const M& z = M{})//#TEMP z - для универсализации. Нужно по-другому обыграть.
     {
         M H(3,7);
         H << 1., 0., 0., 0., 0., 0., 0.,

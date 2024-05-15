@@ -83,6 +83,51 @@ public:
     }
 };
 
+class BindTrackEKFE_xyz_cv
+{
+private:
+    Track<Eigen::MatrixXd,
+    Estimator::EKFE<Eigen::MatrixXd,Models::StateModel_CV<Eigen::MatrixXd>,Models::MeasureModel_XvXYvYZvZ_XYZ<Eigen::MatrixXd>>,
+    EstimatorInitEKFE<Eigen::MatrixXd,Models::StateModel_CV<Eigen::MatrixXd>,Models::MeasureModel_XvXYvYZvZ_XYZ<Eigen::MatrixXd>>,
+    Models::StateModel_CV<Eigen::MatrixXd>,Models::MeasureModel_XvXYvYZvZ_XYZ<Eigen::MatrixXd>> track;
+public:
+
+    BindTrackEKFE_xyz_cv(const py::tuple& tu):
+        track(make_meas(tu)){}
+
+    Eigen::MatrixXd step1(const py::tuple& tu)
+    {
+        return track.step(make_meas(tu));
+    }
+    Eigen::MatrixXd step2(double t)
+    {
+        return track.step(t);
+    }
+};
+
+class BindTrackEKFE_xyz_ct
+{
+private:
+    Track<Eigen::MatrixXd,
+    Estimator::EKFE<Eigen::MatrixXd,Models::StateModel_CT<Eigen::MatrixXd>,Models::MeasureModel_XvXYvYZvZW_XYZ<Eigen::MatrixXd>>,
+    EstimatorInitEKFE_xyz_ct<Eigen::MatrixXd,Models::StateModel_CT<Eigen::MatrixXd>,Models::MeasureModel_XvXYvYZvZW_XYZ<Eigen::MatrixXd>>,
+    Models::StateModel_CT<Eigen::MatrixXd>,Models::MeasureModel_XvXYvYZvZW_XYZ<Eigen::MatrixXd>> track;
+public:
+
+    BindTrackEKFE_xyz_ct(const py::tuple& tu):
+        track(make_meas(tu)){}
+
+    Eigen::MatrixXd step1(const py::tuple& tu)
+    {
+        return track.step(make_meas(tu));
+    }
+    Eigen::MatrixXd step2(double t)
+    {
+        return track.step(t);
+    }
+};
+
+
 void bind_track(pybind11::module &m)
 {
     py::class_<BindTrackKFE>(m, "BindTrackKFE")
@@ -97,4 +142,12 @@ void bind_track(pybind11::module &m)
         .def(py::init<const py::tuple&>())
         .def("step",&BindTrackKFE_CT::step1)
         .def("step",&BindTrackKFE_CT::step2);
+    py::class_<BindTrackEKFE_xyz_cv>(m, "BindTrackEKFE_xyz_cv")
+        .def(py::init<const py::tuple&>())
+        .def("step",&BindTrackEKFE_xyz_cv::step1)
+        .def("step",&BindTrackEKFE_xyz_cv::step2);
+    py::class_<BindTrackEKFE_xyz_ct>(m, "BindTrackEKFE_xyz_ct")
+        .def(py::init<const py::tuple&>())
+        .def("step",&BindTrackEKFE_xyz_ct::step1)
+        .def("step",&BindTrackEKFE_xyz_ct::step2);
 }

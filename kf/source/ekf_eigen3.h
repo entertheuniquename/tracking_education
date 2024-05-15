@@ -59,10 +59,8 @@ private:
                               const M& x,
                               TypeParam ...p)
     {
-
         double relativeStep = sqrt(Utils::eps());
         double delta = relativeStep;
-
         M z = func(x, p...);
         size_t n = Utils::length(x);
         size_t m = Utils::length(z);
