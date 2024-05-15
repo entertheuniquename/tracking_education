@@ -14,11 +14,20 @@ void bind_models(py::module &m) {
     m.def("stateModel_CVx", [](Eigen::MatrixXd x,double dt){
         Models::StateModel_CV<Eigen::MatrixXd> sm;
         return sm(x,dt);});
+    m.def("stateModel_CTx", [](Eigen::MatrixXd x,double dt){
+        Models::StateModel_CT<Eigen::MatrixXd> sm;
+        return sm(x,dt);});
     m.def("measureModel_XX", [](){
           Models::MeasureModel_XvXYvYZvZ_XYZ<Eigen::MatrixXd> mm;
           return mm();});
     m.def("measureModel_XXx", [](Eigen::MatrixXd x){
           Models::MeasureModel_XvXYvYZvZ_XYZ<Eigen::MatrixXd> mm;
+          return mm(x);});
+    m.def("measureModel_XwX", [](){
+          Models::MeasureModel_XvXYvYZvZW_XYZ<Eigen::MatrixXd> mm;
+          return mm();});
+    m.def("measureModel_XwXx", [](Eigen::MatrixXd x){
+          Models::MeasureModel_XvXYvYZvZW_XYZ<Eigen::MatrixXd> mm;
           return mm(x);});
     m.def("measureModel_XRx", [](Eigen::MatrixXd x){
           Models::MeasureModel_XvXYvYZvZ_EAR<Eigen::MatrixXd> mm;

@@ -85,6 +85,68 @@ struct EstimatorInitKFE
 };
 
 template<class M, class StateModel, class MeasureModel>
+struct EstimatorInitKFEx
+{
+    M R; M Q0; M Q; M P0; M x0;
+    StateModel SM;
+    MeasureModel MM;
+    M GM;
+
+    std::unique_ptr<Estimator::KFEx<M,StateModel,MeasureModel>> make_estimator()
+    {
+        return std::make_unique<Estimator::KFEx<M,StateModel,MeasureModel>>(x0,P0,SM,Q0,GM,MM,R);
+    }
+
+    EstimatorInitKFEx(const Measurement<M>& measurement)
+    {
+        //Здесь пока задаются все общие параметры:
+        //-------------------------------------------------------------------------
+        double process_var = 1.;//откуда?
+        double meas_var_decart = 300.;//откуда?
+        double velo_var_decart = 30.;//откуда?
+        //double meas_var_polar_ae = 0.0001;//откуда?
+        //double meas_var_polar_r = 1.0;//откуда?
+        double dt = 6.0;//откуда?
+        //-------------------------------------------------------------------------
+
+        M point = measurement.point;
+
+        Q0.resize(3,3);
+        Q0 << process_var,          0.,          0.,
+                       0., process_var,          0.,
+                       0.,          0., process_var;
+
+        Models::GModel_XvXYvYZvZW<M> gm;
+
+        GM = gm(dt);
+        M G = GM;
+        Q = G*Q0*Utils::transpose(G);
+
+        R.resize(3,3);
+        R << meas_var_decart*meas_var_decart,                              0.,                               0.,
+                                          0., meas_var_decart*meas_var_decart,                               0.,
+                                          0.,                              0.,  meas_var_decart*meas_var_decart;
+
+        M Rvel(3,3);
+        Rvel << velo_var_decart*velo_var_decart,                              0.,                               0.,
+                                             0., velo_var_decart*velo_var_decart,                               0.,
+                                             0.,                              0.,  velo_var_decart*velo_var_decart;
+        M Hp(3,7);
+        Hp << 1., 0., 0., 0., 0., 0., 0.,
+              0., 0., 1., 0., 0., 0., 0.,
+              0., 0., 0., 0., 1., 0., 0.;
+        M Hv(3,7);
+        Hv << 0., 1., 0., 0., 0., 0., 0.,
+              0., 0., 0., 1., 0., 0., 0.,
+              0., 0., 0., 0., 0., 1., 0.;
+        x0 = Utils::transpose(Hp)*point;
+        x0(6,0) = 0.098;//#SET_DATA
+        //std::cout << "x0:" << std::endl << x0 << std::endl;
+        P0  = Utils::transpose(Hp)*R*Hp + Utils::transpose(Hv)*Rvel*Hv;
+    }
+};
+
+template<class M, class StateModel, class MeasureModel>
 struct EstimatorInitEKFE
 {
     M R; M Q; M P0; M x0;
@@ -261,6 +323,7 @@ public:
     }
     M step(const Measurement<M>& m)
     {
+        //std::cout << "step'" << std::endl;
         double dt = m.timepoint - timepoint;
         timepoint = m.timepoint;
         M res_state;
