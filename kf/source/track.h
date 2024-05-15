@@ -326,6 +326,7 @@ struct EstimatorInitEKFE_xyz_ct
         double velo_var_decart = 0.1;//30.;//откуда?
         double meas_var_polar_ae = 0.0001;//откуда?
         double meas_var_polar_r = 1.0;//откуда?
+        double w_var = 0.0007;
         double dt = 0.2;//6.0;//откуда?
         //-------------------------------------------------------------------------
 
@@ -365,9 +366,8 @@ struct EstimatorInitEKFE_xyz_ct
               0., 0., 0., 0., 0., 1., 0.;
 
         x0 = Utils::transpose(Hp)*point;
-
-        x0(6,0) = 0.098;//0.;//0.098;//#SET_DATA
         P0  = Utils::transpose(Hp)*R*Hp + Utils::transpose(Hv)*Rvel*Hv;
+        P0(6,6) = w_var;
     }
 };
 
