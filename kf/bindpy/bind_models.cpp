@@ -17,6 +17,10 @@ void bind_models(py::module &m) {
     m.def("stateModel_CTx", [](Eigen::MatrixXd x,double dt){
         Models::StateModel_CT<Eigen::MatrixXd> sm;
         return sm(x,dt);});
+    m.def("stateModel_CT6", [](Eigen::MatrixXd x){
+        std::cout << "stateModel_CT6" << std::endl;
+        Models::StateModel_CT<Eigen::MatrixXd> sm;
+        return sm(x,6.);});
     m.def("measureModel_XX", [](){
           Models::MeasureModel_XvXYvYZvZ_XYZ<Eigen::MatrixXd> mm;
           return mm();});
@@ -32,4 +36,7 @@ void bind_models(py::module &m) {
     m.def("measureModel_XRx", [](Eigen::MatrixXd x){
           Models::MeasureModel_XvXYvYZvZ_EAR<Eigen::MatrixXd> mm;
           return mm(x); });
+    m.def("jacobian_ct", [](Eigen::MatrixXd x, double t){
+          Models::Jacobian_CT<Eigen::MatrixXd> mm;
+          return mm(x,t); });
 }

@@ -1,14 +1,12 @@
 message("kf_test[0]:")
 
+
 set(CMAKE_AUTOMOC ON)
 
+include_directories(${GTest_INCLUDES})
 message("kf_test[1]: установка automoc")
 
 include_directories("/usr/include/eigen3")
-include_directories("/usr/include/x86_64_linux_gnu/qt5")
-include_directories("/usr/include/x86_64_linux_gnu/qt5/QtCore")
-include_directories("/usr/include/x86_64_linux_gnu/qt5/QtCharts")
-include_directories("/usr/include/x86_64_linux_gnu/qt5/QtTest")
 
 message("kf_test[2]: включение необходимых дирректорий")
 
@@ -17,6 +15,11 @@ add_executable("tests_run" ${TEST_SRC})
 
 message("kf_test[4]: создание исполняемого файла")
 
-target_link_libraries(tests_run ${PROJECT_NAME})
+target_include_directories(tests_run PRIVATE ${Python3_INCLUDE_DIRS})
 
+target_link_libraries(tests_run ${GTest_LIBRARIES} ${Python3_LIBRARIES} pthread gtest gtest_main armadillo)
+target_compile_options(tests_run PRIVATE -O0 -g3)
 message("kf_test[5]: ***")
+
+include(GoogleTest)
+gtest_discover_tests(tests_run)

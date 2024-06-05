@@ -34,8 +34,8 @@ struct EstimatorInitKFE
         //Здесь пока задаются все общие параметры:
         //-------------------------------------------------------------------------
         double process_var = 1.;//откуда?
-        double meas_var_decart = 300.;//откуда?
-        double velo_var_decart = 30.;//откуда?
+        double meas_std_decart = 300.;//откуда?
+        double velo_std_decart = 30.;//откуда?
         //double meas_var_polar_ae = 0.0001;//откуда?
         //double meas_var_polar_r = 1.0;//откуда?
         double dt = 6.0;//откуда?
@@ -61,14 +61,14 @@ struct EstimatorInitKFE
         Q = G*Q0*Utils::transpose(G);
 
         R.resize(3,3);
-        R << meas_var_decart*meas_var_decart,                              0.,                               0.,
-                                          0., meas_var_decart*meas_var_decart,                               0.,
-                                          0.,                              0.,  meas_var_decart*meas_var_decart;
+        R << meas_std_decart*meas_std_decart,                              0.,                               0.,
+                                          0., meas_std_decart*meas_std_decart,                               0.,
+                                          0.,                              0.,  meas_std_decart*meas_std_decart;
 
         M Rvel(3,3);
-        Rvel << velo_var_decart*velo_var_decart,                              0.,                               0.,
-                                             0., velo_var_decart*velo_var_decart,                               0.,
-                                             0.,                              0.,  velo_var_decart*velo_var_decart;
+        Rvel << velo_std_decart*velo_std_decart,                              0.,                               0.,
+                                             0., velo_std_decart*velo_std_decart,                               0.,
+                                             0.,                              0.,  velo_std_decart*velo_std_decart;
         M Hp(3,6);
         Hp << 1., 0., 0., 0., 0., 0.,
               0., 0., 1., 0., 0., 0.,
@@ -102,10 +102,8 @@ struct EstimatorInitKFEx
         //Здесь пока задаются все общие параметры:
         //-------------------------------------------------------------------------
         double process_var = 1.;//откуда?
-        double meas_var_decart = 300.;//откуда?
-        double velo_var_decart = 30.;//откуда?
-        //double meas_var_polar_ae = 0.0001;//откуда?
-        //double meas_var_polar_r = 1.0;//откуда?
+        double meas_std_decart = 300.;//откуда?
+        double velo_std_decart = 30.;//откуда?
         double dt = 6.0;//откуда?
         //-------------------------------------------------------------------------
 
@@ -123,14 +121,14 @@ struct EstimatorInitKFEx
         Q = G*Q0*Utils::transpose(G);
 
         R.resize(3,3);
-        R << meas_var_decart*meas_var_decart,                              0.,                               0.,
-                                          0., meas_var_decart*meas_var_decart,                               0.,
-                                          0.,                              0.,  meas_var_decart*meas_var_decart;
+        R << meas_std_decart*meas_std_decart,                              0.,                               0.,
+                                          0., meas_std_decart*meas_std_decart,                               0.,
+                                          0.,                              0.,  meas_std_decart*meas_std_decart;
 
         M Rvel(3,3);
-        Rvel << velo_var_decart*velo_var_decart,                              0.,                               0.,
-                                             0., velo_var_decart*velo_var_decart,                               0.,
-                                             0.,                              0.,  velo_var_decart*velo_var_decart;
+        Rvel << velo_std_decart*velo_std_decart,                              0.,                               0.,
+                                             0., velo_std_decart*velo_std_decart,                               0.,
+                                             0.,                              0.,  velo_std_decart*velo_std_decart;
         M Hp(3,7);
         Hp << 1., 0., 0., 0., 0., 0., 0.,
               0., 0., 1., 0., 0., 0., 0.,
@@ -162,16 +160,16 @@ struct EstimatorInitEKFE
         //Здесь пока задаются все общие параметры:
         //-------------------------------------------------------------------------
         double process_var = 1.;//откуда?
-        double meas_var_decart = 300.;//откуда?
-        double velo_var_decart = 30.;//откуда?
+        double meas_std_decart = 300.;//откуда?
+        double velo_std_decart = 30.;//откуда?
         double meas_var_polar_ae = 0.0001;//откуда?
         double meas_var_polar_r = 1.0;//откуда?
         double dt = 6.0;//откуда?
         //-------------------------------------------------------------------------
 
         Models::GModel_XvXYvYZvZ<Eigen::MatrixXd> gm;
-        StateModel sm;
-        MeasureModel mm;
+        //StateModel sm;
+        //MeasureModel mm;
 
         M point = measurement.point;
 
@@ -179,9 +177,6 @@ struct EstimatorInitEKFE
         Q0 << process_var,          0.,          0.,
                        0., process_var,          0.,
                        0.,          0., process_var;
-
-
-
 
         M G = gm(dt);
         Q = G*Q0*Utils::transpose(G);
@@ -314,6 +309,7 @@ struct EstimatorInitEKFE_xyz_ct
 
     std::unique_ptr<Estimator::EKFE<Eigen::MatrixXd,StateModel,MeasureModel>> make_estimator()
     {
+        //std::cout << "R:" << std::endl << R << std::endl;
         return std::make_unique<Estimator::EKFE<Eigen::MatrixXd,StateModel,MeasureModel>>(x0,P0,Q,R);
     }
 
@@ -321,41 +317,38 @@ struct EstimatorInitEKFE_xyz_ct
     {
         //Здесь пока задаются все общие параметры:
         //-------------------------------------------------------------------------
-        double process_var = 0.5;//1.;//откуда?
-        double meas_var_decart = 1.;//300.;//откуда?
-        double velo_var_decart = 0.1;//30.;//откуда?
-        double meas_var_polar_ae = 0.0001;//откуда?
-        double meas_var_polar_r = 1.0;//откуда?
-        double w_var = 0.0007;
-        double dt = 0.2;//6.0;//откуда?
+        double dt = 6; //откуда?
+        double process_var = 0.01;//0.5; //откуда?
+        double process_var_w = 0.000001;//0.00017;//1;//0.001; //откуда?
+        double meas_std_decart = 30.;//300.;//300.;//1.; //откуда?
+        double velo_std_decart = 3.;//30.;//1.;//30.;//1.; //откуда?
+
+        double w_var = 0.392*0.392;//0.098*0.098;//40;//0.4*180/M_PI;//2*0.4;//0.4;//1.;//0.1;//0.0007;
         //-------------------------------------------------------------------------
 
         Models::GModel_XvXYvYZvZW<Eigen::MatrixXd> gm;
-        StateModel sm;
-        MeasureModel mm;
 
         M point = measurement.point;
 
-        M Q0(3,3);
-        Q0 << process_var,          0.,          0.,
-                       0., process_var,          0.,
-                       0.,          0., process_var;
-
-
-
+        M Q0(4,4);
+        Q0 << process_var,          0.,          0.,            0.,
+                       0., process_var,          0.,            0.,
+                       0.,          0., process_var,            0.,
+                       0.,          0.,          0., process_var_w;
 
         M G = gm(dt);
         Q = G*Q0*Utils::transpose(G);
 
         R.resize(3,3);
-        R << meas_var_decart*meas_var_decart,                              0.,                               0.,
-                                          0., meas_var_decart*meas_var_decart,                               0.,
-                                          0.,                              0.,  meas_var_decart*meas_var_decart;
+        R << meas_std_decart*meas_std_decart,                              0.,                               0.,
+                                          0., meas_std_decart*meas_std_decart,                               0.,
+                                          0.,                              0.,  meas_std_decart*meas_std_decart;
+
 
         M Rvel(3,3);
-        Rvel << velo_var_decart*velo_var_decart,                              0.,                               0.,
-                                             0., velo_var_decart*velo_var_decart,                               0.,
-                                             0.,                              0.,  velo_var_decart*velo_var_decart;
+        Rvel << velo_std_decart*velo_std_decart,                              0.,                               0.,
+                                             0., velo_std_decart*velo_std_decart,                               0.,
+                                             0.,                              0.,  velo_std_decart*velo_std_decart;
         M Hp(3,7);
         Hp << 1., 0., 0., 0., 0., 0., 0.,
               0., 0., 1., 0., 0., 0., 0.,
@@ -384,23 +377,37 @@ public:
         estimator = ei.make_estimator();
         timepoint = m.timepoint;
     }
-    M step(const Measurement<M>& m)
+    std::pair<M,M> step(const Measurement<M>& m)
     {
         double dt = m.timepoint - timepoint;
         timepoint = m.timepoint;
-        M res_state;
-        res_state = estimator->predict(dt).first;
-        res_state = estimator->correct(m.point).first;
 
-        return res_state;
+        M res_state;
+        M res_covariance;
+
+        auto p = estimator->predict(dt);
+        res_state = p.first;
+        res_covariance = p.second;
+
+        auto c = estimator->correct(m.point);
+        res_state = c.first;
+        res_covariance = c.second;
+
+        return std::make_pair(res_state,res_covariance);
     }
-    M step(double t)
+    std::pair<M,M> step(double t)
     {
         double dt = t - timepoint;
         timepoint = t;
         M res_state;
-        res_state = estimator->predict(dt).first;
+        M res_covariance;
 
-        return res_state;
+        auto p = estimator->predict(dt);
+        res_state = p.first;
+        res_covariance = p.second;
+
+        return std::make_pair(res_state,res_covariance);
     }
+    M GetState(){return estimator->GetState();}
+    M GetCovariance(){return estimator->GetStateCovariance();}
 };

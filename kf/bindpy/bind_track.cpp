@@ -29,13 +29,15 @@ public:
     BindTrackKFE(const py::tuple& tu):
         track(make_meas(tu)){}
 
-    Eigen::MatrixXd step1(const py::tuple& tu)
+    py::tuple step1(const py::tuple& tu)
     {
-        return track.step(make_meas(tu));
+        auto res = track.step(make_meas(tu));
+        return py::make_tuple(res.first,res.second);
     }
-    Eigen::MatrixXd step2(double t)
+    py::tuple step2(double t)
     {
-        return track.step(t);
+        auto res = track.step(t);
+        return py::make_tuple(res.first,res.second);
     }
 };
 
@@ -51,13 +53,15 @@ public:
     BindTrackEKFE(const py::tuple& tu):
         track(make_meas(tu)){}
 
-    Eigen::MatrixXd step1(const py::tuple& tu)
+    py::tuple step1(const py::tuple& tu)
     {
-        return track.step(make_meas(tu));
+        auto res = track.step(make_meas(tu));
+        return py::make_tuple(res.first,res.second);
     }
-    Eigen::MatrixXd step2(double t)
+    py::tuple step2(double t)
     {
-        return track.step(t);
+        auto res = track.step(t);
+        return py::make_tuple(res.first,res.second);
     }
 };
 
@@ -73,13 +77,15 @@ public:
     BindTrackKFE_CT(const py::tuple& tu):
         track(make_meas(tu)){}
 
-    Eigen::MatrixXd step1(const py::tuple& tu)
+    py::tuple step1(const py::tuple& tu)
     {
-        return track.step(make_meas(tu));
+        auto res = track.step(make_meas(tu));
+        return py::make_tuple(res.first,res.second);
     }
-    Eigen::MatrixXd step2(double t)
+    py::tuple step2(double t)
     {
-        return track.step(t);
+        auto res = track.step(t);
+        return py::make_tuple(res.first,res.second);
     }
 };
 
@@ -95,13 +101,15 @@ public:
     BindTrackEKFE_xyz_cv(const py::tuple& tu):
         track(make_meas(tu)){}
 
-    Eigen::MatrixXd step1(const py::tuple& tu)
+    py::tuple step1(const py::tuple& tu)
     {
-        return track.step(make_meas(tu));
+        auto res = track.step(make_meas(tu));
+        return py::make_tuple(res.first,res.second);
     }
-    Eigen::MatrixXd step2(double t)
+    py::tuple step2(double t)
     {
-        return track.step(t);
+        auto res = track.step(t);
+        return py::make_tuple(res.first,res.second);
     }
 };
 
@@ -117,14 +125,18 @@ public:
     BindTrackEKFE_xyz_ct(const py::tuple& tu):
         track(make_meas(tu)){}
 
-    Eigen::MatrixXd step1(const py::tuple& tu)
+    py::tuple step1(const py::tuple& tu)
     {
-        return track.step(make_meas(tu));
+        auto res = track.step(make_meas(tu));
+        return py::make_tuple(res.first,res.second);
     }
-    Eigen::MatrixXd step2(double t)
+    py::tuple step2(double t)
     {
-        return track.step(t);
+        auto res = track.step(t);
+        return py::make_tuple(res.first,res.second);
     }
+    Eigen::MatrixXd GetState(){return track.GetState();}
+    Eigen::MatrixXd GetCovariance(){return track.GetCovariance();}
 };
 
 
@@ -149,5 +161,7 @@ void bind_track(pybind11::module &m)
     py::class_<BindTrackEKFE_xyz_ct>(m, "BindTrackEKFE_xyz_ct")
         .def(py::init<const py::tuple&>())
         .def("step",&BindTrackEKFE_xyz_ct::step1)
-        .def("step",&BindTrackEKFE_xyz_ct::step2);
+        .def("step",&BindTrackEKFE_xyz_ct::step2)
+        .def("getState",&BindTrackEKFE_xyz_ct::GetState)
+        .def("getCov",&BindTrackEKFE_xyz_ct::GetCovariance);
 }
