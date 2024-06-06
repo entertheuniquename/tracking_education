@@ -42,6 +42,7 @@ struct StateModel_CT
         double w = x(static_cast<int>(POSITION::W));
         if(w==0)//std::numeric_limits<double>::epsilon(); - min double //#TODO
             w=Utils::eps();
+        //std::cout << "w:" << w << std::endl;
         double S = std::sin(w*T);
         double C = std::cos(w*T);
         double TS = S/w;

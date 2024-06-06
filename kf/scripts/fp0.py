@@ -10,6 +10,16 @@ from numpy import eye, array, asarray
 import matplotlib.pyplot as plt
 import estimator as e
 
+def predict_xx(x,fx):
+    """
+    Predicts the next state of X. If you need to
+    compute the next state yourself, override this function. You would
+    need to do this, for example, if the usual Taylor expansion to
+    generate F is not providing accurate results for you.
+    """
+    return fx(x)
+
+
 def jacobian_ct(x_in,t_in):
     """ compute Jacobian of F matrix at x_in """
 
@@ -106,6 +116,9 @@ def H_Jacobian(x):
 
     return ret
 
+def fx(x,t):
+    return e.stateModel_CTx(x,t)
+
 def hx(x):
     """ compute measurement for slant range that
     would correspond to state x.
@@ -127,26 +140,27 @@ def hx(x):
 # Период поступления данных
 T = 6
 
+# Угловая скорость на развороте в радианах
+w2g_r = 0.098
+w5g_r = 0.245
+w8g_r = 0.392
+# Угловая скорость на развороте в градусах
+w2g_d = w2g_r*180./math.pi
+w5g_d = w5g_r*180./math.pi
+w8g_d = w8g_r*180./math.pi
+#print("w2g_d: "+str(w2g_d))
+#print("w5g_d: "+str(w5g_d))
+#print("w8g_d: "+str(w8g_d))
+
 # Ошибки процесса
 process_var = 0.01
 process_var_w = 0.000001
 
 # Ошибки измерений
-meas_std = 300
-velo_std = 30
+meas_std = 300.
+velo_std = 30.
+w_std = w8g_r
 
-# Угловая скорость на развороте в радианах
-w2g_r = 0.098
-w5g_r = 0.245
-w8g_r = 0.392
-
-# Угловая скорость на развороте в градусах
-w2g_d = w2g_r*180/math.pi
-w5g_d = w5g_r*180/math.pi
-w8g_d = w8g_r*180/math.pi
-#print("w2g_d: "+str(w2g_d))
-#print("w5g_d: "+str(w5g_d))
-#print("w8g_d: "+str(w8g_d))
 
 # Матрица ошибок процесса
 Q0 = np.diag([process_var, process_var, process_var, process_var_w])
@@ -157,14 +171,7 @@ G = np.array([[T**2/2, 0,      0     , 0],
               [0,      0,      T**2/2, 0],
               [0,      0,      T     , 0],
               [0,      0,      0     , T]])
-
-##print("Q0:")
-##print(Q0)
-
 Q = G@Q0@G.T
-
-##print("Q:")
-##print(Q)
 
 # Матрица ошибок измерения
 R = np.diag([meas_std*meas_std, meas_std*meas_std, meas_std*meas_std])
@@ -175,35 +182,35 @@ initialState2gr = np.array([30000., -200., 0., 0., 0., 0., w2g_r])#radian
 initialState5gr = np.array([30000., -200., 0., 0., 0., 0., w5g_r])#radian
 initialState8gr = np.array([30000., -200., 0., 0., 0., 0., w8g_r])#radian
 
-Hp = np.array([[1, 0, 0, 0, 0, 0, 0],
-               [0, 0, 1, 0, 0, 0, 0],
-               [0, 0, 0, 0, 1, 0, 0]])
-Hv = np.array([[0, 1, 0, 0, 0, 0, 0],
-               [0, 0, 0, 1, 0, 0, 0],
-               [0, 0, 0, 0, 0, 1, 0]])
+Hp = np.array([[1., 0., 0., 0., 0., 0., 0.],
+               [0., 0., 1., 0., 0., 0., 0.],
+               [0., 0., 0., 0., 1., 0., 0.]])
+Hv = np.array([[0., 1., 0., 0., 0., 0., 0.],
+               [0., 0., 0., 1., 0., 0., 0.],
+               [0., 0., 0., 0., 0., 1., 0.]])
 
 P0  = Hp.T@R@Hp + Hv.T@Rvel@Hv;
-
+P0[6,6] = w_std*w_std
 ### Создание наборов данных ##################################################################################
 # Функция создания набора данных: по кругу
-def make_true_data_round(x0, am, dt):
+def make_true_data_round(x0_in, am_in, dt_in):
     # Создание обнулённой матрицы нужного размера
-    X = np.zeros((x0.shape[0], am))
+    X = np.zeros((x0_in.shape[0], am_in))
     # Запись первого значения
-    X[:, 0] = x0.T
+    X[:, 0] = x0_in.T
     # Цикл создания участка разворота
-    for i in range(am-1):
-        xx = e.stateModel_CTx(np.copy(X[:, i]),dt)
+    for i in range(am_in-1):
+        xx = e.stateModel_CTx(np.copy(X[:, i]),dt_in)
         X[:, i+1] = xx.flatten()
     return X
 
-X2g0r=make_true_data_round(initialState2gr, 500, T)
-X5g0r=make_true_data_round(initialState5gr, 500, T)
-X8g0r=make_true_data_round(initialState8gr, 500, T)
+X2g0r=make_true_data_round(initialState2gr, 200, T)
+X5g0r=make_true_data_round(initialState5gr, 200, T)
+X8g0r=make_true_data_round(initialState8gr, 200, T)
 
 ### Добавление к наборам данных ошибок процесса ##############################################################
-def add_process_noise(X,Var):
-    Xn = X + np.sqrt(Var) @ np.random.normal(loc=0, scale=1.0, size=(X.shape[0], X.shape[1]))
+def add_process_noise(X_in,Var_in):
+    Xn = X_in + np.sqrt(Var_in) @ np.random.normal(loc=0, scale=1.0, size=(X_in.shape[0], X_in.shape[1]))
     return Xn
 
 Xn2g0r = add_process_noise(X2g0r,Q)
@@ -212,186 +219,137 @@ Xn8g0r = add_process_noise(X8g0r,Q)
 
 ### Получение из наборов данных измерений и добавление к ним шцмов ###########################################
 # Функция получения измерений
-def make_meas(X, R):
+def make_meas(X_in, R_in):
     # Получение обнуленного набора измерений
-    Z = np.zeros((R.shape[0], X.shape[1]))
+    Z = np.zeros((R_in.shape[0], X_in.shape[1]))
     # Цикл по заполнению набора измерений зашумлёнными значениями
     for i in range(Z.shape[1]):
         # Получение очередного значения набора данных
-        zz = e.measureModel_XwXx(np.copy(X[:, i]))
+        zz = e.measureModel_XwXx(np.copy(X_in[:, i]))
         Z[:, i] = zz.flatten()
     # Добавления шумов к набору измерений
-    Zn = Z + np.sqrt(R) @ np.random.normal(loc=0, scale=math.sqrt(1.0), size=(Z.shape[0], Z.shape[1]))
+    Zn = Z + np.sqrt(R_in) @ np.random.normal(loc=0, scale=math.sqrt(1.0), size=(Z.shape[0], Z.shape[1]))
     return Zn
 
 Zn2g0r = make_meas(Xn2g0r, R)
 Zn5g0r = make_meas(Xn5g0r, R)
 Zn8g0r = make_meas(Xn8g0r, R)
+
 #################################################################################################################
 #tests
 xx = H_Jacobian(Xn2g0r)
-print("H_Jacobian:")
-print(xx)
+#print("xx:")
+#print(xx)
 zz = hx(Xn2g0r[:,0])
-print("hx:")
-print(zz)
+#print("zz:")
+#print(zz)
 #################################################################################################################
-x0 = np.array([initialState2gr[0],0,initialState2gr[2],0,initialState2gr[4],0,0])
-#x0 = Xn2g0r[:,0]#!!!
-#print("x0["+str(x0.shape[0])+"]:")
-#print(x0)
-step_amount = Zn2g0r.shape[1]
-#################################################################################################################
-#print("=== filter(1) ===")
-def step1(x0,P0,Q,R,Z,amount,T):
-#    print("=== STEP-1 ===")
-#    print("[0] x0["+str(x0.shape[0])+"]")
-#    print(x0)
-#    print("[0] P0["+str(P0.shape[0])+","+str(P0.shape[1])+"]")
-#    print(P0)
-#    print("[0] Q["+str(Q.shape[0])+","+str(Q.shape[1])+"]")
-#    print(Q)
-#    print("[0] R["+str(R.shape[0])+","+str(R.shape[1])+"]")
-#    print(R)
-    ekf = e.BindEKFE_xyz_ct(x0, P0, Q, R)
+def step_ekf(x0_in,P0_in,Q_in,R_in,Z_in,amount_in,T_in):
+    ekf = e.BindEKFE_xyz_ct(x0_in, P0_in, Q_in, R_in)
     xs = []
-    for i in range(amount-1):
-        z = Z[:, i + 1]
-        xp = ekf.predict(T)
-#        if i<3:
-#            print("[0] it "+str(i))
-#            print("[0] pred.xp["+str(xp.shape[0])+"]")
-#            print(xp)
-#            #print("[0] pred.P["+str(rk0.P.shape[0])+","+str(rk0.P.shape[1])+"]")
-#            #print(rk0.P)
+    for i in range(amount_in-1):
+        z = Z_in[:, i + 1]
+        xp = ekf.predict(T_in)
         m1 = np.array([z[0], z[1], z[2]])
         xc = ekf.correct(m1.T)
-#        if i<3:
-#            print("[0] corr.xc["+str(xc.shape[0])+"]")
-#            print(xc)
         xs.append(np.squeeze(xc[:]))
     return asarray(xs)
-#print("--------------")
-xs = step1(x0,P0,Q,R,Zn2g0r,step_amount,T)
-#print("xs["+str(xs.shape[0])+","+str(xs.shape[1])+"]")
 #################################################################################################################
-#print("=== filter(0) ===")
-def step0(x0,P0,Q,R,Z,amount,T):
-#    print("=== STEP-0 ===")
-#    print("[0] x0["+str(x0.shape[0])+"]")
-#    print(x0)
-#    print("[0] P0["+str(P0.shape[0])+","+str(P0.shape[1])+"]")
-#    print(P0)
-#    print("[0] Q["+str(Q.shape[0])+","+str(Q.shape[1])+"]")
-#    print(Q)
-#    print("[0] R["+str(R.shape[0])+","+str(R.shape[1])+"]")
-#    print(R)
+def step_filterpy_ekf(x0_in,P0_in,Q_in,R_in,Z_in,amount_in,T_in):
     rk0 = ExtendedKalmanFilter(dim_x=7, dim_z=3)
-    rk0.x = x0
-    rk0.R = R
-    rk0.Q = Q
-    rk0.P = P0
+    rk0.x = x0_in
+    rk0.R = R_in
+    rk0.Q = Q_in
+    rk0.P = P0_in
     xs0, track0 = [], []
-    for i in range(amount-1):
+    for i in range(amount_in-1):
+        #xx = fx(rk0.x,T)# - если закомментировать в фильтре predict_x
+        #rk0.x = np.array([xx[0,0],xx[1,0],xx[2,0],xx[3,0],xx[4,0],xx[5,0],xx[6,0]])#BAD
+
         rk0.F = F_Jacobian(rk0.x,T)
         rk0.predict()
-#        if i<3:
-#            print("[0] it "+str(i))
-#            print("[0] pred.x["+str(rk0.x.shape[0])+"]")
-#            print(rk0.x)
-#            print("[0] pred.P["+str(rk0.P.shape[0])+","+str(rk0.P.shape[1])+"]")
-#            print(rk0.P)
-        Z1 = Z.transpose()
+        Z1 = Z_in.transpose()
         z = Z1[i+1,:]
         rk0.H = H_Jacobian(rk0.x)
         rk0.update(z, H_Jacobian, hx)
-#        if i<3:
-#            print("[0] corr.x["+str(rk0.x.shape[0])+"]")
-#            print(rk0.x)
-#            print("[0] corr.P["+str(rk0.P.shape[0])+","+str(rk0.P.shape[1])+"]")
-#            print(rk0.P)
         xs0.append(rk0.x)
     return asarray(xs0)
-
-xs0 = step0(x0,P0,Q,R,Zn2g0r,step_amount,T)
-#print("xs0["+str(xs0.shape[0])+","+str(xs0.shape[1])+"]")
-#print("--------------")
 #################################################################################################################
+def steps(Z_in,X_in,T_in):
 
-#################################################################################################################
-#print("=== graphics ===")
+    step_amount = Z_in.shape[1]
+    #x0 = X_in[:,0]
+    x0 = np.array([X_in[0,0],0,X_in[2,0],0,X_in[4,0],0,0])
 
-def print_step(Z,X,T):
-    #x0 = X[:,0]
-    x0 = np.array([X[0,0],0,X[2,0],0,X[4,0],0,0])
-
-    xs0 = step0(x0,P0,Q,R,Z,step_amount,T)
-    xs = step1(x0,P0,Q,R,Z,step_amount,T)
+    xs0 = step_filterpy_ekf(x0,P0,Q,R,Z_in,step_amount,T_in)
+    xs = step_ekf(x0,P0,Q,R,Z_in,step_amount,T_in)
 
     time0 = np.arange(0, step_amount*T,T)
-    Z0 = Z.transpose()
-    X0 = X.transpose()
+    Z0 = Z_in.transpose()
+    X0 = X_in.transpose()
 
     fig = plt.figure(figsize=(18,25))
 
     ax1 = fig.add_subplot(2,2,1)
-    ax1.plot(X0[:,2], X0[:,0], label='.',color='black')
-    ax1.plot(Z0[:,1], Z0[:,0], label='.', marker='x', color='grey')
-    ax1.plot(xs0[:,2], xs0[:,0], label='.', color='green')
-    ax1.plot(xs[:,2], xs[:,0], label='.', color='red')
-    ax1.set_title(".")
-    ax1.set_xlabel('.')
-    ax1.set_ylabel('.')
+    ax1.plot(xs0[:,0], xs0[:,2], label='.', color='green')
+    ax1.plot(xs[:,0], xs[:,2], label='.', color='red')
+    ax1.plot(Z0[:,0], Z0[:,1], label='.', marker='x', color='grey')
+    ax1.plot(X0[:,0], X0[:,2], label='.',color='black')
+    ax1.set_title("x(y) real(black) measurements(grey) filterpy-ekf(green) my-ekf(red)")
+    ax1.set_xlabel('x.m')
+    ax1.set_ylabel('y.m')
     ax1.grid(True)
 
     ax2 = fig.add_subplot(3,2,2)
-    ax2.plot(time0[1:], X0[1:,0], label='.',color='black')
-    ax2.plot(time0[1:], Z0[1:,0], label='.', marker='x', color='grey')
-    ax2.plot(time0[1:], xs0[:,0], label='.', color='green')
-    ax2.plot(time0[1:], xs[:,0], label='.', color='red')
-    ax2.set_title(".")
-    ax2.set_xlabel('.')
-    ax2.set_ylabel('.')
+    ax2.plot(X0[1:,0], label='.',color='black')
+    ax2.plot(Z0[1:,0], label='.', marker='x', color='grey')
+    ax2.plot(xs0[:,0], label='.', color='green')
+    ax2.plot(xs[:,0], label='.', color='red')
+    ax2.set_title("x")
+    ax2.set_xlabel('x.m')
+    ax2.set_ylabel('amount')
     ax2.grid(True)
 
     ax4 = fig.add_subplot(3,2,4)
-    ax4.plot(time0[1:], X0[1:,2], label='.',color='black')
-    ax4.plot(time0[1:], Z0[1:,1], label='.', marker='x', color='grey')
-    ax4.plot(time0[1:], xs0[:,2], label='.', color='green')
-    ax4.plot(time0[1:], xs[:,2], label='.', color='red')
-    ax4.set_title(".")
-    ax4.set_xlabel('.')
-    ax4.set_ylabel('.')
+    ax4.plot(X0[1:,2], label='.',color='black')
+    ax4.plot(Z0[1:,1], label='.', marker='x', color='grey')
+    ax4.plot(xs0[:,2], label='.', color='green')
+    ax4.plot(xs[:,2], label='.', color='red')
+    ax4.set_title("y")
+    ax4.set_xlabel('y.m')
+    ax4.set_ylabel('amount')
     ax4.grid(True)
 
     ax6 = fig.add_subplot(3,2,6)
-    ax6.plot(time0[1:], X0[1:,4], label='.',color='black')
-    ax6.plot(time0[1:], Z0[1:,2], label='.', marker='x', color='grey')
-    ax6.plot(time0[1:], xs0[:,4], label='.', color='green')
-    ax6.plot(time0[1:], xs[:,4], label='.', color='red')
-    ax6.set_title(".")
-    ax6.set_xlabel('.')
-    ax6.set_ylabel('.')
+    ax6.plot(X0[1:,4], label='.',color='black')
+    ax6.plot(Z0[1:,2], label='.', marker='x', color='grey')
+    ax6.plot(xs0[:,4], label='.', color='green')
+    ax6.plot(xs[:,4], label='.', color='red')
+    ax6.set_title("z")
+    ax6.set_xlabel('z.m')
+    ax6.set_ylabel('amount')
     ax6.grid(True)
 
     ax3 = fig.add_subplot(2,2,3)
-    ax3.plot(time0[1:], X0[1:,6], label='.',color='black')
-    ax3.plot(time0[1:], xs0[:,6], label='.', color='green')
-    ax3.plot(time0[1:], xs[:,6], label='.', color='red')
-    ax3.set_title(".")
-    ax3.set_xlabel('.')
-    ax3.set_ylabel('.')
+    ax3.plot(X0[1:,6], label='.',color='black')
+    ax3.plot(xs0[:,6], label='.', color='green')
+    ax3.plot(xs[:,6], label='.', color='red')
+    ax3.set_title("w")
+    ax3.set_xlabel('w.rad')
+    ax3.set_ylabel('amount')
     ax3.grid(True)
 
-    plt.show()
+    #plt.show()
 
-print_step(Zn2g0r,Xn2g0r,T)
-print_step(Zn5g0r,Xn5g0r,T)
-print_step(Zn8g0r,Xn8g0r,T)
+    return xs, xs0
 
+steps(Zn2g0r,Xn2g0r,T)
+steps(Zn5g0r,Xn5g0r,T)
+steps(Zn8g0r,Xn8g0r,T)
+
+plt.show()
 
 #################################################################################################################
-#print("=== statistic ===")
 def calc_err(X,dt,Q,R,step_function):
     Xn = add_process_noise(X,Q)
     Zn = make_meas(Xn,R)
@@ -414,14 +372,11 @@ def calc_std_err(X,dt,Q,R,step_function,iterations):
 
     var_err /= num_iterations
     return np.sqrt(var_err)
-
-#std_err0 = calc_std_err(X2g0r,T,Q,R,step0)
-#std_err1 = calc_std_err(X2g0r,T,Q,R,step1)
 ##################################################################################################################
 def print_stat(X,T,Q,R):
 
-    std_err0 = calc_std_err(X,T,Q,R,step0,2000)
-    std_err1 = calc_std_err(X,T,Q,R,step1,2000)
+    std_err0 = calc_std_err(X,T,Q,R,step_filterpy_ekf,2000)
+    std_err1 = calc_std_err(X,T,Q,R,step_ekf,2000)
 
     plt.figure(figsize=(20,45))
 
@@ -467,8 +422,10 @@ def print_stat(X,T,Q,R):
     plt.xlabel('Time,s')
     plt.ylabel('std_w, m/s')
 
-    plt.show()
+    #plt.show()
 
-print_stat(X2g0r,T,Q,R)
-print_stat(X5g0r,T,Q,R)
-print_stat(X8g0r,T,Q,R)
+#print_stat(X2g0r,T,Q,R)
+#print_stat(X5g0r,T,Q,R)
+#print_stat(X8g0r,T,Q,R)
+
+plt.show()

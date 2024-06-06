@@ -34,6 +34,7 @@ struct ExtendedKalmanFilterMath
         Prediction ans;
         std::pair<M, M> predMatrix = jacobianMatrices_analitic_CT(Qs, x, f, df, p...);
         ans.x = f(x, p...);
+        //ans.x = predMatrix.second*x;//#TEMP
         ans.S = Utils::qrFactor_A(predMatrix.second, S, predMatrix.first);
         ans.dFdx = predMatrix.second;
         return ans;
