@@ -32,7 +32,9 @@ public:
 class BindEKFE_xyz_ct
 {
 private:
-    Estimator::EKFE<Eigen::MatrixXd,Models::StateModel_CT<Eigen::MatrixXd>,Models::MeasureModel_XvXYvYZvZW_XYZ<Eigen::MatrixXd>> ekfe;
+    Estimator::EKFE<Eigen::MatrixXd,
+                    Models::StateModel_CT<Eigen::MatrixXd>,
+                    Models::MeasureModel_XvXYvYZvZW_XYZ<Eigen::MatrixXd>> ekfe;
 public:
 
     BindEKFE_xyz_ct(Eigen::MatrixXd in_state,

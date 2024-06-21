@@ -36,14 +36,14 @@ template<class M, class SM, class MM>
 class KFE : public KalmanFilterMath<M>
 {
 private:
-    Eigen::MatrixXd state;//x0
-    Eigen::MatrixXd covariance;//P0
-    Eigen::MatrixXd transition_state_model;//A
-    Eigen::MatrixXd process_noise;//Q
-    Eigen::MatrixXd transition_process_noise_model;//G
-    Eigen::MatrixXd transition_measurement_model;//M
-    Eigen::MatrixXd measurement_noise;//R
-    Eigen::MatrixXd measurement_predict;//zp
+    Eigen::MatrixXd state;
+    Eigen::MatrixXd covariance;
+    Eigen::MatrixXd transition_state_model;
+    Eigen::MatrixXd process_noise;
+    Eigen::MatrixXd transition_process_noise_model;
+    Eigen::MatrixXd transition_measurement_model;
+    Eigen::MatrixXd measurement_noise;
+    Eigen::MatrixXd measurement_predict;
 public:
     KFE(Eigen::MatrixXd in_state,
         Eigen::MatrixXd in_covariance,
@@ -121,8 +121,6 @@ public:
     }
 };
 
-//
-
 template <class M = Eigen::MatrixXd>
 struct KalmanFilterMath_X
 {
@@ -155,14 +153,14 @@ template<class M, class SM, class MM>
 class KFEx : public KalmanFilterMath_X<M>
 {
 private:
-    Eigen::MatrixXd state;//x0
-    Eigen::MatrixXd covariance;//P0
-                 SM transition_state_model;//A
-    Eigen::MatrixXd process_noise;//Q
-    Eigen::MatrixXd transition_process_noise_model;//G
-                 MM transition_measurement_model;//M
-    Eigen::MatrixXd measurement_noise;//R
-    Eigen::MatrixXd measurement_predict;//zp
+    Eigen::MatrixXd state;
+    Eigen::MatrixXd covariance;
+                 SM transition_state_model;
+    Eigen::MatrixXd process_noise;
+    Eigen::MatrixXd transition_process_noise_model;
+                 MM transition_measurement_model;
+    Eigen::MatrixXd measurement_noise;
+    Eigen::MatrixXd measurement_predict;
 public:
     KFEx(Eigen::MatrixXd in_state,
          Eigen::MatrixXd in_covariance,
@@ -193,9 +191,6 @@ public:
         Eigen::MatrixXd control_input(this->state.rows(),this->state.cols());
         control_input.setZero();
 
-        //SM sm;
-        //MM mm;
-
         const Eigen::MatrixXd& x = this->state;
                             SM A = transition_state_model;
         const Eigen::MatrixXd& B = control_model;
@@ -203,7 +198,6 @@ public:
         const Eigen::MatrixXd& P = this->covariance;
         const Eigen::MatrixXd& Q = this->process_noise;
         const Eigen::MatrixXd& G = this->transition_process_noise_model;
-        //const Eigen::MatrixXd& H = mm();
               Eigen::MatrixXd& xp = state_predict;
               Eigen::MatrixXd& Pp = covariance_predict;
               Eigen::MatrixXd& zp = this->measurement_predict;

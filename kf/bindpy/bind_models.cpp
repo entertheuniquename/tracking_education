@@ -36,7 +36,7 @@ void bind_models(py::module &m) {
     m.def("measureModel_XRx", [](Eigen::MatrixXd x){
           Models::MeasureModel_XvXYvYZvZ_EAR<Eigen::MatrixXd> mm;
           return mm(x); });
-    m.def("jacobian_ct", [](Eigen::MatrixXd x, double t){
-          Models::Jacobian_CT<Eigen::MatrixXd> mm;
+    m.def("FJacobian_CT", [](Eigen::MatrixXd x, double t){
+          Models::FJacobian_CT<Eigen::MatrixXd> mm;
           return mm(x,t); });
 }

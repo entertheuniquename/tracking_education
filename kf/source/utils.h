@@ -10,6 +10,101 @@
 #include <algorithm>
 //#include <math.h>
 
+namespace Utils_A {
+
+template <typename Type>
+arma::Col<Type> diag (const arma::Mat<Type>& x) {
+    return x.diag();
+}
+
+inline double eps (const double& x = 1.0) {
+    auto xp = std::abs(x);
+    return std::nextafter(xp, xp + 1.0f) - xp;
+}
+
+inline bool isSymmetricPositiveSemiDefinite (const std::string& name, const arma::Mat<double>& x) {
+
+    if (x.is_empty()) {
+        throw std::invalid_argument("Matrix " + name + " is empty.");
+    }
+
+    if (!x.is_square()) {
+        throw std::invalid_argument("Matrix " + name + " isn't square.");
+    }
+
+    auto tol = 100.*max(eps(abs(diag(x))));
+
+    if (!x.is_symmetric()) {
+        arma::mat d = abs(x - trans(x));
+        if (!find(d>sqrt(tol)).is_empty()) {
+            std::stringstream ss;
+            ss << "sqrt(tol)=" << sqrt(tol) << std::endl;
+            ss << "abs(x - trans(x))=" << std::endl << d << std::endl;
+            ss << "Matrix: " << std::endl << x << std::endl << " isn't symmetric.";
+            throw std::invalid_argument(ss.str());
+        }
+    }
+
+    auto notPositiveSemidefinite = any(find(eig_sym((x + x.t())/2.) < -tol ));
+
+    if (notPositiveSemidefinite) {
+        throw std::invalid_argument("Matrix " + name + " isn't positive definite.");
+    }
+
+    return true;
+}
+
+inline arma::mat svdPSD(const arma::mat &A) {
+    arma::mat U,V;
+    arma::vec s;
+    svd(U,s,V,A);
+    return V*sqrt(diagmat(s));
+}
+
+inline arma::Mat<double>
+qrFactor(const arma::Mat<double>& A,
+         const arma::Mat<double>& S,
+         const arma::Mat<double>& Ns
+         ) {
+    arma::Mat<double> D = join_cols(S.t()*A.t(),Ns.t()), Q, R;
+    qr_econ(Q, R, D);
+    return R.t();
+}
+
+inline arma::Mat<double>
+cholPSD(const arma::Mat<double>& A) {
+    arma::Mat<double> ret;
+    if (!chol(ret, A)) {
+        return svdPSD(A);
+    }
+    return ret.t();
+}
+
+inline size_t length(const arma::Mat<double>& m) {
+    return m.n_rows * m.n_cols;
+}
+
+inline arma::Mat<double>
+zeros(size_t n, size_t m) {
+    return arma::zeros(n, m);
+}
+
+inline arma::Mat<double> ComputeKalmanGain(arma::Mat<double> Sy,
+                                           arma::Mat<double> Pxy) {
+    arma::Mat<double> K1 = arma::solve(arma::trimatl(Sy), trans(Pxy), arma::solve_opts::fast);
+    arma::Mat<double> K  = arma::trans(arma::solve(arma::trimatu(trans(Sy)), K1, arma::solve_opts::fast));
+    return K;
+}
+
+
+inline double ComputeAngleDifference(double a1, double a2) {
+    return std::arg(std::complex<double>(cos(a1 - a2), sin(a1 - a2)));
+}
+
+}
+
+#define CHECK_SYMETRIC_POSITIVE(x) Utils_A::isSymmetricPositiveSemiDefinite(#x, x)
+
 using namespace Eigen;
 
 namespace Utils
@@ -31,6 +126,57 @@ inline Eigen::MatrixXd diag(std::vector<double> v)
     for(unsigned long i=0;i<v.size();i++)
         M(i,i) = v[i];
     return M;
+}
+
+inline Eigen::MatrixXd zero_matrix(int rows, int cols)
+{
+    Eigen::MatrixXd m(rows,cols);
+    m.setZero();
+    return m;
+}
+
+inline Eigen::MatrixXd AE(arma::Mat<double> a)
+{
+    return Eigen::Map<Eigen::MatrixXd>(a.memptr(),a.n_rows,a.n_cols);
+}
+
+inline arma::Mat<double> EA(Eigen::MatrixXd e)
+{
+    return arma::Mat<double>(e.data(),e.rows(), e.cols(),true,false);
+}
+
+inline arma::mat svdPSD(const arma::mat &A) {
+    arma::mat U,V;
+    arma::vec s;
+    svd(U,s,V,A);
+    return V*sqrt(diagmat(s));
+}
+
+inline Eigen::MatrixXd cholPSD_A(const Eigen::MatrixXd& A1)
+{
+    //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    arma::Mat<double> A = EA(A1);
+    //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    arma::Mat<double> ret;
+    if (!chol(ret, A)) {
+        return AE(svdPSD(A));
+    }
+    //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    arma::Mat<double> rett = ret.t();
+    Eigen::MatrixXd x = Utils::AE(rett);
+    return x;//AE(ret.t());
+    //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+}
+
+inline Eigen::MatrixXd sqrtMatrix(const Eigen::MatrixXd& matrix)
+{
+    CHECK_SYMETRIC_POSITIVE(Utils::EA(matrix));
+    return Utils::cholPSD_A(matrix);
+}
+
+inline Eigen::MatrixXd FromSqrtMatrix(const Eigen::MatrixXd& matrix)
+{
+    return matrix * Utils::transpose(matrix);;
 }
 
 inline Eigen::MatrixXd state_vector(std::vector<double> v)
@@ -129,17 +275,7 @@ inline Eigen::MatrixXd ComputeKalmanGain_E(Eigen::MatrixXd Sy,Eigen::MatrixXd Px
     return K;
 }
 
-inline Eigen::MatrixXd AE(arma::Mat<double> a)
-{
-    return Eigen::Map<Eigen::MatrixXd>(a.memptr(),a.n_rows,a.n_cols);
-}
-
-inline arma::Mat<double> EA(Eigen::MatrixXd e)
-{
-    return arma::Mat<double>(e.data(),e.rows(), e.cols(),true,false);
-}
-
-//#TODO
+//#TODO - доделать
 inline Eigen::MatrixXd qrFactor(const Eigen::MatrixXd& A,
                                 const Eigen::MatrixXd& S,
                                 const Eigen::MatrixXd& Ns)
@@ -214,29 +350,6 @@ inline Eigen::MatrixXd ComputeKalmanGain_A(const Eigen::MatrixXd& Sy1,
     //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 }
 
-inline arma::mat svdPSD(const arma::mat &A) {
-    arma::mat U,V;
-    arma::vec s;
-    svd(U,s,V,A);
-    return V*sqrt(diagmat(s));
-}
-
-inline Eigen::MatrixXd cholPSD_A(const Eigen::MatrixXd& A1)
-{
-    //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    arma::Mat<double> A = EA(A1);
-    //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    arma::Mat<double> ret;
-    if (!chol(ret, A)) {
-        return AE(svdPSD(A));
-    }
-    //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    arma::Mat<double> rett = ret.t();
-    Eigen::MatrixXd x = Utils::AE(rett);
-    return x;//AE(ret.t());
-    //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-}
-
 inline double ComputeAngleDifference(double a1, double a2) {
     return std::arg(std::complex<double>(cos(a1 - a2), sin(a1 - a2)));
 }
@@ -250,99 +363,45 @@ inline double rad2deg(double x)
     return (180./M_PI)*x;
 }
 
+inline Eigen::MatrixXd rot_z(double a)
+{
+    a = Utils::deg2rad(a);
+    Eigen::MatrixXd R(3,3);
+    R.setZero();
+    double ca = std::cos(a);
+    double sa = std::sin(a);
+    R(0,0) = ca;
+    R(0,1) = -sa;
+    R(1,0) = sa;
+    R(1,1) = ca;
+    return R;
 }
 
-namespace Utils_A {
-
-template <typename Type>
-arma::Col<Type> diag (const arma::Mat<Type>& x) {
-    return x.diag();
+inline Eigen::MatrixXd rot_y(double a)
+{
+    a = Utils::deg2rad(a);
+    Eigen::MatrixXd R(3,3);
+    R.setZero();
+    double ca = std::cos(a);
+    double sa = std::sin(a);
+    R(0,0) = ca;
+    R(0,2) = sa;
+    R(2,0) = -sa;
+    R(2,2) = ca;
+    return R;
 }
 
-inline double eps (const double& x = 1.0) {
-    auto xp = std::abs(x);
-    return std::nextafter(xp, xp + 1.0f) - xp;
-}
-
-inline bool isSymmetricPositiveSemiDefinite (const std::string& name, const arma::Mat<double>& x) {
-
-    if (x.is_empty()) {
-        throw std::invalid_argument("Matrix " + name + " is empty.");
+inline Eigen::MatrixXd sph2cart(Eigen::MatrixXd polar)
+{
+    Eigen::MatrixXd decart(polar.rows(),polar.cols());
+    decart.setZero();
+    for(int i=0;i<polar.cols();i++)
+    {
+        decart(0, i) = polar(2, i) * std::cos(polar(1, i)) * std::cos(polar(0, i));
+        decart(1, i) = polar(2, i) * std::sin(polar(1, i)) * std::cos(polar(0, i));
+        decart(2, i) = polar(2, i) * std::sin(polar(0, i));
     }
-
-    if (!x.is_square()) {
-        throw std::invalid_argument("Matrix " + name + " isn't square.");
-    }
-
-    auto tol = 100.*max(eps(abs(diag(x))));
-
-    if (!x.is_symmetric()) {
-        arma::mat d = abs(x - trans(x));
-        if (!find(d>sqrt(tol)).is_empty()) {
-            std::stringstream ss;
-            ss << "sqrt(tol)=" << sqrt(tol) << std::endl;
-            ss << "abs(x - trans(x))=" << std::endl << d << std::endl;
-            ss << "Matrix: " << std::endl << x << std::endl << " isn't symmetric.";
-            throw std::invalid_argument(ss.str());
-        }
-    }
-
-    auto notPositiveSemidefinite = any(find(eig_sym((x + x.t())/2.) < -tol ));
-
-    if (notPositiveSemidefinite) {
-        throw std::invalid_argument("Matrix " + name + " isn't positive definite.");
-    }
-
-    return true;
-}
-
-inline arma::mat svdPSD(const arma::mat &A) {
-    arma::mat U,V;
-    arma::vec s;
-    svd(U,s,V,A);
-    return V*sqrt(diagmat(s));
-}
-
-inline arma::Mat<double>
-qrFactor(const arma::Mat<double>& A,
-         const arma::Mat<double>& S,
-         const arma::Mat<double>& Ns
-         ) {
-    arma::Mat<double> D = join_cols(S.t()*A.t(),Ns.t()), Q, R;
-    qr_econ(Q, R, D);
-    return R.t();
-}
-
-inline arma::Mat<double>
-cholPSD(const arma::Mat<double>& A) {
-    arma::Mat<double> ret;
-    if (!chol(ret, A)) {
-        return svdPSD(A);
-    }
-    return ret.t();
-}
-
-inline size_t length(const arma::Mat<double>& m) {
-    return m.n_rows * m.n_cols;
-}
-
-inline arma::Mat<double>
-zeros(size_t n, size_t m) {
-    return arma::zeros(n, m);
-}
-
-inline arma::Mat<double> ComputeKalmanGain(arma::Mat<double> Sy,
-                                           arma::Mat<double> Pxy) {
-    arma::Mat<double> K1 = arma::solve(arma::trimatl(Sy), trans(Pxy), arma::solve_opts::fast);
-    arma::Mat<double> K  = arma::trans(arma::solve(arma::trimatu(trans(Sy)), K1, arma::solve_opts::fast));
-    return K;
-}
-
-
-inline double ComputeAngleDifference(double a1, double a2) {
-    return std::arg(std::complex<double>(cos(a1 - a2), sin(a1 - a2)));
+    return decart;
 }
 
 }
-
-#define CHECK_SYMETRIC_POSITIVE(x) Utils_A::isSymmetricPositiveSemiDefinite(#x, x)

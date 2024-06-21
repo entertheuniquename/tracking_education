@@ -2,19 +2,14 @@
 
 #include "kf_eigen3.h"
 #include "ekf_eigen3.h"
+#include "kf.h"
+#include "ekf.h"
+#include "imm.h"
 #include <map>
 #include <string>
 #include <memory>
 #include <map>
 #include "models.h"
-
-template<class M=Eigen::MatrixXd>
-struct Measurement
-{
-    double timepoint;
-    M point;
-    //M measurement_noise;
-};
 
 template<class M, class StateModel, class MeasureModel>
 struct EstimatorInitKFE
@@ -359,7 +354,7 @@ struct EstimatorInitEKFE_xyz_ct
               0., 0., 0., 0., 0., 1., 0.;
 
         x0 = Utils::transpose(Hp)*point;
-        P0  = Utils::transpose(Hp)*R*Hp + Utils::transpose(Hv)*Rvel*Hv;
+        P0 = Utils::transpose(Hp)*R*Hp + Utils::transpose(Hv)*Rvel*Hv;
         P0(6,6) = w_var;
     }
 };
@@ -371,7 +366,99 @@ private:
     std::unique_ptr<EstimatorType> estimator;
     double timepoint;
 public:
+
     Track(const Measurement<M>& m)
+    {
+        EstimatorInit ei(m);
+        estimator = ei.make_estimator();
+        timepoint = m.timepoint;
+    }
+    std::pair<M,M> step(const Measurement<M>& m)
+    {
+        double dt = m.timepoint - timepoint;
+        timepoint = m.timepoint;
+
+        M res_state;
+        M res_covariance;
+
+        auto p = estimator->predict(dt);
+        res_state = p.first;
+        res_covariance = p.second;
+
+        auto c = estimator->correct(m.point);
+        res_state = c.first;
+        res_covariance = c.second;
+
+        return std::make_pair(res_state,res_covariance);
+    }
+    std::pair<M,M> step(double t)
+    {
+        double dt = t - timepoint;
+        timepoint = t;
+        M res_state;
+        M res_covariance;
+
+        auto p = estimator->predict(dt);
+        res_state = p.first;
+        res_covariance = p.second;
+
+        return std::make_pair(res_state,res_covariance);
+    }
+    M GetState(){return estimator->GetState();}
+    M GetCovariance(){return estimator->GetStateCovariance();}
+};
+
+//template<class M, class GM>
+//make_noise_matrices(double process_x_std,double process_y_std,double process_z_std,double process_w_std,
+//                  double measure_x_std,double measure_y_std,double measure_z_std,
+//                  double measure_vx_std,double measure_vy_std,double measure_vz_std)
+//{
+//    M Q0(4,4);
+//    Q0 << std::pow(process_x_std,2), 0., 0., 0.,
+//          0., std::pow(process_y_std,2), 0., 0.,
+//          0., 0., std::pow(process_z_std,2), 0.,
+//          0., 0., 0., std::pow(process_w_std,2);
+
+//    M G = gm(dt);
+//    M Q = G*Q0*Utils::transpose(G);
+
+//    M Rp(3,3);
+//    Rp << std::pow(measure_x_std,2), 0., 0.,
+//          0., std::pow(measure_y_std,2), 0.,
+//          0., 0., std::pow(measure_z_std,2);
+
+
+//    M Rv(3,3);
+//    Rv << std::pow(measure_vx_std,2), 0., 0.,
+//          0., std::pow(measure_vy_std,2), 0.,
+//          0., 0., std::pow(measure_vz_std,2);
+//}
+
+template<class M, class EstimatorType, class EstimatorInit, class SM, class MM>
+class Track2
+{
+private:
+    std::unique_ptr<EstimatorType> estimator;
+    double timepoint;
+public:
+//    template<class M, class EstimatorType, class ...TypeParam>
+//    std::unique_ptr<EstimatorType> EInit(const Measurement<M>& m,TypeParam ...param)
+//    {
+//        M Hp(3,7);
+//        Hp << 1., 0., 0., 0., 0., 0., 0.,
+//              0., 0., 1., 0., 0., 0., 0.,
+//              0., 0., 0., 0., 1., 0., 0.;
+//        M Hv(3,7);
+//        Hv << 0., 1., 0., 0., 0., 0., 0.,
+//              0., 0., 0., 1., 0., 0., 0.,
+//              0., 0., 0., 0., 0., 1., 0.;
+
+//        x0 = Utils::transpose(Hp)*point;
+//        P0  = Utils::transpose(Hp)*R*Hp + Utils::transpose(Hv)*Rvel*Hv;
+//        P0(6,6) = w_var;
+//    }
+
+    Track2(const Measurement<M>& m)
     {
         EstimatorInit ei(m);
         estimator = ei.make_estimator();

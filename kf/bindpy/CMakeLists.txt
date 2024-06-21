@@ -8,6 +8,7 @@ pybind11_add_module(estimator
         bind_track.cpp
         bind_models.cpp
         bindings.cpp
+        bind_imm.cpp
 )
 
 target_link_libraries(estimator PRIVATE Eigen3::Eigen kf)
