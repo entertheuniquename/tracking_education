@@ -2,42 +2,59 @@
 
 namespace py = pybind11;
 
-class BindKFE
+class BindKF_10_CV_XX
 {
 private:
-    Estimator::KFE<Eigen::MatrixXd,Models::StateModel_CV<Eigen::MatrixXd>,Models::MeasureModel_XvXYvYZvZ_XYZ<Eigen::MatrixXd>> kfe;
+    Estimator::KF<Eigen::MatrixXd,
+                  Models10::FCV<Eigen::MatrixXd>,
+                  Models10::H<Eigen::MatrixXd>,
+                  Models10::G<Eigen::MatrixXd>> kf;
 public:
 
-    BindKFE(Eigen::MatrixXd in_state,
-            Eigen::MatrixXd in_covariance,
-            Eigen::MatrixXd in_transition_state_model,
-            Eigen::MatrixXd in_process_noise,
-            Eigen::MatrixXd in_transition_process_noise_model,
-            Eigen::MatrixXd in_transition_measurement_model,
-            Eigen::MatrixXd in_measurement_noise):
-        kfe(in_state,
-            in_covariance,
-            in_transition_state_model,
-            in_process_noise,
-            in_transition_process_noise_model,
-            in_transition_measurement_model,
-            in_measurement_noise){}
+    BindKF_10_CV_XX(Eigen::MatrixXd in_state,
+                    Eigen::MatrixXd in_covariance,
+                    Eigen::MatrixXd in_process_noise,
+                    Eigen::MatrixXd in_measurement_noise):
+        kf(in_state,
+           in_covariance,
+           in_process_noise,
+           in_measurement_noise)
+    {}
 
-    Eigen::MatrixXd predKFE(double dt)
-    {
-        return kfe.predict(dt).first;
-    }
+    Eigen::MatrixXd predict(double dt){return kf.predict(dt).first;}
+    Eigen::MatrixXd correct(const Eigen::MatrixXd &z){return kf.correct(z).first;}
+};
 
-    Eigen::MatrixXd corrKFE(const Eigen::MatrixXd &z)
-    {
-        return kfe.correct(z).first;
-    }
+class BindKF_10_CA_XX
+{
+private:
+    Estimator::KF<Eigen::MatrixXd,
+                  Models10::FCA<Eigen::MatrixXd>,
+                  Models10::H<Eigen::MatrixXd>,
+                  Models10::G<Eigen::MatrixXd>> kf;
+public:
+
+    BindKF_10_CA_XX(Eigen::MatrixXd in_state,
+                    Eigen::MatrixXd in_covariance,
+                    Eigen::MatrixXd in_process_noise,
+                    Eigen::MatrixXd in_measurement_noise):
+        kf(in_state,
+           in_covariance,
+           in_process_noise,
+           in_measurement_noise){}
+
+    Eigen::MatrixXd predict(double dt){return kf.predict(dt).first;}
+    Eigen::MatrixXd correct(const Eigen::MatrixXd &z){return kf.correct(z).first;}
 };
 
 void bind_kf(pybind11::module &m)
 {
-    py::class_<BindKFE>(m, "BindKFE")
-        .def(py::init<Eigen::MatrixXd,Eigen::MatrixXd,Eigen::MatrixXd,Eigen::MatrixXd,Eigen::MatrixXd,Eigen::MatrixXd,Eigen::MatrixXd>())
-        .def("predict",&BindKFE::predKFE)
-        .def("correct",&BindKFE::corrKFE);
+    py::class_<BindKF_10_CV_XX>(m, "BindKF_10_CV_XX")
+        .def(py::init<Eigen::MatrixXd,Eigen::MatrixXd,Eigen::MatrixXd,Eigen::MatrixXd>())
+        .def("predict",&BindKF_10_CV_XX::predict)
+        .def("correct",&BindKF_10_CV_XX::correct);
+    py::class_<BindKF_10_CA_XX>(m, "BindKF_10_CA_XX")
+        .def(py::init<Eigen::MatrixXd,Eigen::MatrixXd,Eigen::MatrixXd,Eigen::MatrixXd>())
+        .def("predict",&BindKF_10_CA_XX::predict)
+        .def("correct",&BindKF_10_CA_XX::correct);
 }
