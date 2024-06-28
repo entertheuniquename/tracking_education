@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "../source/kf.h"
+#include "../source/ekf_qr.h"
 #include "../source/ekf.h"
 #include "../source/imm.h"
 #include "../source/models.h"

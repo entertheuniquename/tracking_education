@@ -24,8 +24,8 @@ public:
                     M& zp,M& Pc,M& Se, M& residue)
     {
           zp = H(xp);
-          Se = Utils::transpose(H(Utils::transpose(H(Pp)))) + R;
-        M K = Utils::transpose(H(Utils::transpose(Pp)))*Utils::inverse(Se);
+          Se = H()*Pp*Utils::transpose(H()) + R;//#SAVE //Utils::transpose(H(Utils::transpose(H(Pp)))) + R;
+        M K = Pp*Utils::transpose(H())*Utils::inverse(Se);//#SAVE //Utils::transpose(H(Utils::transpose(Pp)))*Utils::inverse(Se);
           residue = z - zp;
           xc = xp + K * residue;
           Pc = Pp - K * Se * Utils::transpose(K);
@@ -66,7 +66,7 @@ public:
 
     std::pair<M,M> predict(double dt)
     {
-        M control_model = Utils::zero_matrix(this->state.rows(),this->state.rows());//#НЕ ПРОВЕРЕНО!
+        M control_model = Utils::zero_matrix(this->state.rows(),this->state.rows());//#TODO - НЕ ПРОВЕРЕНО!
         M control_input = Utils::zero_matrix(this->state.rows(),this->state.cols());
 
         const M& x = this->state;

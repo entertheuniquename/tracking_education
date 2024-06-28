@@ -91,6 +91,7 @@ set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/source)
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 set(TEST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test)
 set(BIN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bin)
+set(SCRIPTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/scripts)
 
 message("kf[5]: установка переменных путей")
 

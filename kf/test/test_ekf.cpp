@@ -1,8 +1,8 @@
-#include "../source/kf.h"
+#include "../source/ekf.h"
 #include "../source/models.h"
 #include <gtest/gtest.h>
 
-TEST (KF,KFMath) {
+TEST (EKF,EKFMath) {
     //----------------------------------------------------------------------
     struct stateModel
     {
@@ -16,6 +16,18 @@ TEST (KF,KFMath) {
             return F*x;
         }
     };
+    struct stateModel_Jacobian
+    {
+        Eigen::MatrixXd operator()(const Eigen::MatrixXd& x,double T)
+        {
+            Eigen::MatrixXd F(4,4);
+            F << 1., T , 0., 0.,
+                 0., 1., 0., 0.,
+                 0., 0., 1., T ,
+                 0., 0., 0., 1.;
+            return F;
+        }
+    };
     struct measureModel
     {
         Eigen::MatrixXd operator()(const Eigen::MatrixXd& x)
@@ -24,6 +36,23 @@ TEST (KF,KFMath) {
             H << 1., 0., 0., 0.,
                  0., 0., 1., 0.;
             return H*x;
+        }
+        Eigen::MatrixXd operator()()
+        {
+            Eigen::MatrixXd H(2,4);
+            H << 1., 0., 0., 0.,
+                 0., 0., 1., 0.;
+            return H;
+        }
+    };
+    struct measureModel_Jacobian
+    {
+        Eigen::MatrixXd operator()(const Eigen::MatrixXd& x)
+        {
+            Eigen::MatrixXd H(2,4);
+            H << 1., 0., 0., 0.,
+                 0., 0., 1., 0.;
+            return H;
         }
         Eigen::MatrixXd operator()()
         {
@@ -64,22 +93,24 @@ TEST (KF,KFMath) {
     double t = 0.2;
     //----------------------------------------------------------------------
 
-    Estimator::KFMath<Eigen::MatrixXd> kf_math;
-    Estimator::KF<Eigen::MatrixXd,
-                  stateModel,
-                  measureModel,
-                  noiseTransitionModel> kf(x0,P0,Q0,R);
+    Estimator::EKFMath<Eigen::MatrixXd> ekf_math;
+    Estimator::EKF<Eigen::MatrixXd,
+                   stateModel,
+                   measureModel,
+                   noiseTransitionModel,
+                   stateModel_Jacobian,
+                   measureModel_Jacobian> ekf(x0,P0,Q0,R);
 
-    auto pred = kf.predict(t);
+    auto pred = ekf.predict(t);
     Eigen::MatrixXd xp1 = pred.first;
     Eigen::MatrixXd Pp1 = pred.second;
 
-    auto corr = kf.correct(z);
+    auto corr = ekf.correct(z);
     Eigen::MatrixXd xc1 = corr.first;
     Eigen::MatrixXd Pc1 = corr.second;
-    Eigen::MatrixXd Sc1 = kf.getCovarianceOfMeasurementPredict();
+    Eigen::MatrixXd Sc1 = ekf.getCovarianceOfMeasurementPredict();
 
-    //FROM filterpy_test_kf.py
+    //FROM filterpy_test_ekf.py
     Eigen::MatrixXd filterpy_xp1(4,1);
     filterpy_xp1 << 1.4, 2., 3.8, 4.;
     Eigen::MatrixXd filterpy_Pp1(4,4);

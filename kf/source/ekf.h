@@ -7,149 +7,34 @@ namespace Estimator
 template <class M>
 struct EKFMath
 {
-    struct Prediction
+public:
+    template<class SM, class JSM>
+    void predict(M& xp,SM A,JSM JA, const M& x,const M& B,const M& u,
+                    M& Pp,const M& P,const M& G,const M& Q,
+                    double dt)
     {
-        M x;
-        M S;
-        M dFdx;
-    };
-
-    template<class TypeFuncstateTransition,
-             class TypeFuncTransitionJacobian,
-             class ...TypeParam>
-    Prediction predict(const M& Qs,
-                       const M& x,
-                       const M& S,
-                       TypeFuncstateTransition f,
-                       TypeFuncTransitionJacobian df,
-                       TypeParam ...p
-                       )
-    {
-        Prediction ans;
-        M J = jacobianMatrices(x, f, df, p...);
-        ans.x = f(x, p...);
-        //ans.x = predMatrix.second*x;//#TEMP
-        ans.S = Utils::qrFactor_A(J, S, Qs);
-        ans.dFdx = J;
-        return ans;
+        xp = A(x,dt) + B*u;
+        Pp = JA(x,dt)*P*Utils::transpose(JA(x,dt)) + G*Q*Utils::transpose(G);
+        Pp = (Pp + Utils::transpose(Pp))/2.;
     }
 
-    template<class TypeMeasurementTransition,
-             class TypeFuncTransitionJacobian,
-             class ...TypeParam>
-    std::pair<M,M> correct(const M& z, M& zp, M& Se, M& dz, const M& Rs, const M& x, const M& S,
-                           TypeMeasurementTransition h,
-                           TypeFuncTransitionJacobian dh,
-                           TypeParam ...p)
+    template<class MM, class JMM>
+    void correct(MM H,JMM JH, const M& Pp,const M& R,
+                    M& xc,const M& xp,const M& z,
+                    M& zp,M& Pc,M& Se, M& residue)
     {
-        MeasurementJacobianAndCovariance r =
-            getMeasurementJacobianAndCovariance(Rs, x, S, h, dh, p...);
-        zp = r.zEstimated;
-        dz = z - zp;
-        Se = r.dHdx*(S*Utils::transpose(S))*Utils::transpose(r.dHdx) + Rs * Utils::transpose(Rs);//#TODO - ПРОВЕРИТЬ - делал на коленках. Похоже на правду.
-        return correctstateAndSqrtCovariance(x, S, dz, r.Pxy, r.Sy, r.dHdx, r.Rsqrt);
-    }
-
-private:
-
-    template<class TypeFuncstateTransition,
-             class ...TypeParam>
-    M numericJacobianAdditive(TypeFuncstateTransition func,
-                              const M& x,
-                              TypeParam ...p)
-    {
-        double relativeStep = sqrt(Utils::eps());
-        double delta = relativeStep;
-        M z = func(x, p...);
-        size_t n = Utils::length(x);
-        size_t m = Utils::length(z);
-        M jacobian = Utils::zeros(m, n);
-        for (size_t j=0; j<n; ++j)
-        {
-            M imvec = x;
-            auto epsilon = std::max(delta, delta*std::abs(imvec(j)));
-            imvec(j) = imvec(j) + epsilon;
-            M imz = func(imvec, p...);
-            M deltaz = imz-z;
-            jacobian.col(j) = deltaz / epsilon;
-        }
-        return jacobian;
-    }
-
-    template<class TypeFuncTransition,
-             class TypeFuncTransitionJacobian,
-             class ...TypeParam>
-    M jacobianMatrices(const M& x,
-                 TypeFuncTransition f,
-                 TypeFuncTransitionJacobian df,
-                 TypeParam ...p)
-    {
-        M J = df(x, p...);
-        return J;
-    }
-
-    template<class TypeFuncstateTransition,
-             class ...TypeParam>
-    M jacobianMatrices(const M& x,
-                 TypeFuncstateTransition f,
-                 std::nullptr_t df,
-                 TypeParam ...p)
-    {
-        M J = numericJacobianAdditive(f, x, p...);
-        return J;
-    }
-
-    struct MeasurementJacobianAndCovariance
-    {
-        M zEstimated;
-        M Pxy;
-        M Sy;
-        M dHdx;
-        M Rsqrt;
-    };
-
-    template<class TypeMeasurementTransition,
-             class TypeFuncTransitionJacobian,
-             class ...TypeParam>
-    MeasurementJacobianAndCovariance getMeasurementJacobianAndCovariance(
-                                        const M& Rs, const M& x, const M& S,
-                                        TypeMeasurementTransition h,
-                                        TypeFuncTransitionJacobian dh,
-                                        TypeParam ...p)
-    {
-        MeasurementJacobianAndCovariance ans;
-        M J = jacobianMatrices(x, h, dh, p...);
-        ans.Rsqrt = Rs;
-        ans.dHdx = J;
-        ans.zEstimated = h(x, p...);
-        ans.Pxy = (S*Utils::transpose(S))*Utils::transpose(ans.dHdx);
-        ans.Sy = Utils::qrFactor_A(ans.dHdx, S, ans.Rsqrt);
-        return ans;
-    }
-
-    std::pair<M,M> correctstateAndSqrtCovariance(const M& x,
-                                                 const M& S,
-                                                 const M& residue,
-                                                 const M& Pxy,
-                                                 const M& Sy,
-                                                 const M& H,
-                                                 const M& Rsqrt)
-    {
-        M K = Utils::ComputeKalmanGain_A(Sy, Pxy);
-        M xp = x + K * residue;
-        M A  = -K * H;
-        for (int i=0; i<A.rows(); ++i) {
-            A(i, i) = 1. + A(i, i);
-        }
-        M Ks = K*Rsqrt;
-        M Sp = Utils::qrFactor_A(A, S, Ks);
-
-        return std::make_pair(xp, Sp);
+          zp = H(xp);
+          Se = JH()*Pp*Utils::transpose(JH()) + R;
+        M K = Pp*Utils::transpose(JH())*Utils::inverse(Se);
+          residue = z - zp;
+          xc = xp + K * residue;
+          Pc = Pp - K * Se * Utils::transpose(K);
+          Pc = (Pc + Utils::transpose(Pc))/2.;
     }
 };
 
-template<class M, class SM, class MM, class GM>
-struct EKF : public EKFMath<M>
+template<class M, class SM, class MM, class GM, class JSM, class JMM>
+class EKF : public EKFMath<M>
 {
 private:
     M state;
@@ -162,13 +47,12 @@ private:
     M measurement_predict;
     M covariance_of_measurement_predict;
     M residue;
-
 public:
-    EKF(M state,M covariance,M process_noise,M measureNoise):
-        state(state),
-        process_noise(process_noise),
-        covariance(covariance),
-        measurement_noise(measureNoise)
+    EKF(M in_state,M in_covariance,M in_process_noise,M in_measurement_noise):
+        state(in_state),
+        covariance(in_covariance),
+        process_noise(in_process_noise),
+        measurement_noise(in_measurement_noise)
     {}
 
     M getState()const{return state;}
@@ -177,61 +61,56 @@ public:
     M getCovariancePredict()const{return covariance_predict;}
     M getMeasurementPredict()const{return measurement_predict;}
     M getCovarianceOfMeasurementPredict()const{return covariance_of_measurement_predict;}
-    bool setState(M& state){state = state;return true;}
-    bool setCovariance(M& covariance){covariance = covariance;return true;}
+    bool setState(M& state_in){state = state_in;return true;}
+    bool setCovariance(M& covariance_in){covariance = covariance_in;return true;}
 
-    template <class ...TP>
-    std::pair<M,M> predict(double dt,TP ...p)
+    std::pair<M,M> predict(double dt)
     {
+        M control_model = Utils::zero_matrix(this->state.rows(),this->state.rows());//#НЕ ПРОВЕРЕНО!
+        M control_input = Utils::zero_matrix(this->state.rows(),this->state.cols());
+
+        const M& x = this->state;
+        const M& B = control_model;
+        const M& u = control_input;
+        const M& P = this->covariance;
+        const M& Q = this->process_noise;
+              M& xp = this->state_predict;
+              M& Pp = this->covariance_predict;
+
         GM Gm;
-        M GG = Gm(dt);
-        M Q = GG*process_noise*Utils::transpose(GG);
-        M sqrtprocess_noise = Utils::sqrtMatrix(Q);
-        M sqrtcovariance = Utils::sqrtMatrix(covariance);
+        M G = Gm(dt);
 
-        auto pred = EKFMath<M>::predict(sqrtprocess_noise,
-                                        state,
-                                        sqrtcovariance,
-                                        SM(),
-                                        p...,
-                                        dt);
-        state = pred.x;
-        covariance = Utils::FromSqrtMatrix(pred.S);
+        EKFMath<M>::predict(xp,SM(),JSM(),x,B,u,Pp,P,G,Q,dt);
 
-        state_predict = pred.x;
-        covariance_predict = Utils::FromSqrtMatrix(pred.S);
+        state = state_predict;
+        covariance = covariance_predict;
+
 
         return std::make_pair(state,covariance);
     }
 
-    template <class ...TypeParam>
-    std::pair<M,M> correct(const M& measurement,TypeParam ...param)
+    std::pair<M,M> correct(const M& in_measurement)
     {
-        M sqrtcovariance = Utils::sqrtMatrix(this->covariance);
-        M sqrtmeasurement_noise = Utils::sqrtMatrix(this->measurement_noise);
+        M state_correct;
+        M covariance_correct;;
 
-        auto corr = EKFMath<M>::correct(measurement,
-                                        measurement_predict,
-                                        covariance_of_measurement_predict,
-                                        residue,
-                                        sqrtmeasurement_noise,
-                                        state,
-                                        sqrtcovariance,
-                                        MM(),
-                                        nullptr,
-                                        measurement//#TODO - сделать через параметр
-                                        /*param...*/);
-        state = corr.first;
-        covariance = Utils::FromSqrtMatrix(corr.second);
+        const M& Pp = this->covariance;
+        const M& R = this->measurement_noise;
+        const M& xp = this->state;
+              M& zp = this->measurement_predict;
+        const M& z = in_measurement;
+              M& xc = state_correct;
+              M& Pc = covariance_correct;
+              M& Se = covariance_of_measurement_predict;
+              M& dz = residue;
 
+        EKFMath<M>::correct(MM(),JMM(),Pp,R,xc,xp,z,zp,Pc,Se,dz);
 
+        state = state_correct;
+        covariance = covariance_correct;
 
         return std::make_pair(state,covariance);
     }
 };
+
 }
-
-
-
-
-

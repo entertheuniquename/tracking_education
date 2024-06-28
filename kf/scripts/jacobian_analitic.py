@@ -4,60 +4,123 @@ import math
 import sympy
 import numpy
 
-x, vx, y, vy, z, vz, w, t = sympy.symbols('x vx y vy z vz w t')
+x, vx, ax, y, vy, ay, z, vz, az, w, t = sympy.symbols('x vx ax y vy ay z vz az w t')
 
-F = sympy.matrices.Matrix([[1., sympy.sin(w*t)/w    , 0., (sympy.cos(w*t)-1)/w, 0., 0., 0.],
-                           [0., sympy.cos(w*t)      , 0., -sympy.sin(w*t)     , 0., 0., 0.],
-                           [0., (1-sympy.cos(w*t))/w, 1., sympy.sin(w*t)/w    , 0., 0., 0.],
-                           [0., sympy.sin(w*t)      , 0., sympy.cos(w*t)      , 0., 0., 0.],
-                           [0., 0.                  , 0., 0.                  , 1., t , 0.],
-                           [0., 0.                  , 0., 0.                  , 0., 1., 0.],
-                           [0., 0.                  , 0., 0.                  , 0., 0., 1.]])
+FCT7 = sympy.matrices.Matrix([[1., sympy.sin(w*t)/w    , 0., (sympy.cos(w*t)-1)/w, 0., 0., 0.],
+                              [0., sympy.cos(w*t)      , 0., -sympy.sin(w*t)     , 0., 0., 0.],
+                              [0., (1-sympy.cos(w*t))/w, 1., sympy.sin(w*t)/w    , 0., 0., 0.],
+                              [0., sympy.sin(w*t)      , 0., sympy.cos(w*t)      , 0., 0., 0.],
+                              [0., 0.                  , 0., 0.                  , 1., t , 0.],
+                              [0., 0.                  , 0., 0.                  , 0., 1., 0.],
+                              [0., 0.                  , 0., 0.                  , 0., 0., 1.]])
 
-H = sympy.matrices.Matrix([[1., 0., 0., 0., 0., 0., 0.],
-                           [0., 0., 1., 0., 0., 0., 0.],
-                           [0., 0., 0., 0., 1., 0., 0.]])
+FCT10 = sympy.matrices.Matrix([[1., sympy.sin(w*t)/w    , 0., 0., (sympy.cos(w*t)-1)/w, 0., 0., 0., 0., 0.],
+                               [0., sympy.cos(w*t)      , 0., 0., -sympy.sin(w*t)     , 0., 0., 0., 0., 0.],
+                               [0., 0.                  , 1., 0., 0.                  , 0., 0., 0., 0., 0.],
+                               [0., (1-sympy.cos(w*t))/w, 0., 1., sympy.sin(w*t)/w    , 0., 0., 0., 0., 0.],
+                               [0., sympy.sin(w*t)      , 0., 0., sympy.cos(w*t)      , 0., 0., 0., 0., 0.],
+                               [0., 0.                  , 0., 0., 0.                  , 1., 0., 0., 0., 0.],
+                               [0., 0.                  , 0., 0., 0.                  , 0., 1., t , 0., 0.],
+                               [0., 0.                  , 0., 0., 0.                  , 0., 0., 1., 0., 0.],
+                               [0., 0.                  , 0., 0., 0.                  , 0., 0., 0., 1., 0.],
+                               [0., 0.                  , 0., 0., 0.                  , 0., 0., 0., 0., 1.]])
 
-State = sympy.matrices.Matrix([[x],
-                               [vx],
-                               [y],
-                               [vy],
-                               [z],
-                               [vz],
-                               [w]])
+FCA10 = sympy.matrices.Matrix([[1., t , (t*t)/2., 0., 0.,       0., 0., 0.,       0., 0.],
+                               [0., 1.,       t , 0., 0.,       0., 0., 0.,       0., 0.],
+                               [0., 0.,       1., 0., 0.,       0., 0., 0.,       0., 0.],
+                               [0., 0.,       0., 1., t , (t*t)/2., 0., 0.,       0., 0.],
+                               [0., 0.,       0., 0., 1.,       t , 0., 0.,       0., 0.],
+                               [0., 0.,       0., 0., 0.,       1., 0., 0.,       0., 0.],
+                               [0., 0.,       0., 0., 0.,       0., 1., t , (t*t)/2., 0.],
+                               [0., 0.,       0., 0., 0.,       0., 0., 1.,       t , 0.],
+                               [0., 0.,       0., 0., 0.,       0., 0., 0.,       1., 0.],
+                               [0., 0.,       0., 0., 0.,       0., 0., 0.,       0., 1.]])
 
-print("F:")
-sympy.pprint(F)
-print("H:")
-sympy.pprint(H)
-print("State("+str(State.shape[0])+","+str(State.shape[1])+"):")
-sympy.pprint(State)
+H7 = sympy.matrices.Matrix([[1., 0., 0., 0., 0., 0., 0.],
+                            [0., 0., 1., 0., 0., 0., 0.],
+                            [0., 0., 0., 0., 1., 0., 0.]])
 
-ModelF = F*State
-ModelH = H*State
+State7 = sympy.matrices.Matrix([[x],
+                                [vx],
+                                [y],
+                                [vy],
+                                [z],
+                                [vz],
+                                [w]])
 
-print("ModelF:")
-sympy.pprint(ModelF)
-print("ModelH:")
-sympy.pprint(ModelH)
+State10 = sympy.matrices.Matrix([[x],
+                                 [vx],
+                                 [ax],
+                                 [y],
+                                 [vy],
+                                 [ay],
+                                 [z],
+                                 [vz],
+                                 [az],
+                                 [w]])
 
-JF = sympy.matrices.zeros(ModelF.shape[0], State.shape[0])
-JH = sympy.matrices.zeros(ModelH.shape[0], State.shape[0])
+print("FCT7:")
+sympy.pprint(FCT7)
+print("FCA10:")
+sympy.pprint(FCA10)
+print("FCT10:")
+sympy.pprint(FCT10)
+print("H7:")
+sympy.pprint(H7)
+print("State7("+str(State7.shape[0])+","+str(State7.shape[1])+"):")
+sympy.pprint(State7)
+print("State10("+str(State10.shape[0])+","+str(State10.shape[1])+"):")
+sympy.pprint(State10)
 
-for i in range(ModelF.shape[0]):
-    for j in range(State.shape[0]):
+ModelFCT7 = FCT7*State7
+ModelFCA10 = FCA10*State10
+ModelFCT10 = FCT10*State10
+ModelH7 = H7*State7
+
+print("ModelFCT7:")
+sympy.pprint(ModelFCT7)
+print("ModelFCA10:")
+sympy.pprint(ModelFCA10)
+print("ModelFCT10:")
+sympy.pprint(ModelFCT10)
+print("ModelH7:")
+sympy.pprint(ModelH7)
+
+JFCT7 = sympy.matrices.zeros(ModelFCT7.shape[0], State7.shape[0])
+JFCA10 = sympy.matrices.zeros(ModelFCA10.shape[0], State10.shape[0])
+JFCT10 = sympy.matrices.zeros(ModelFCT10.shape[0], State10.shape[0])
+JH7 = sympy.matrices.zeros(ModelH7.shape[0], State7.shape[0])
+
+for i in range(ModelFCT7.shape[0]):
+    for j in range(State7.shape[0]):
         #print("sympy.diff("+str(Model[i,0])+","+str(State[j,0])+")")
-        JF[i,j] = sympy.diff(ModelF[i,0],State[j,0])
+        JFCT7[i,j] = sympy.diff(ModelFCT7[i,0],State7[j,0])
 
-for i in range(ModelH.shape[0]):
-    for j in range(State.shape[0]):
+for i in range(ModelFCA10.shape[0]):
+    for j in range(State10.shape[0]):
         #print("sympy.diff("+str(Model[i,0])+","+str(State[j,0])+")")
-        JH[i,j] = sympy.diff(ModelH[i,0],State[j,0])
+        JFCA10[i,j] = sympy.diff(ModelFCA10[i,0],State10[j,0])
 
-print("JACOBIAN_F:")
-sympy.pprint(JF)
+for i in range(ModelFCT10.shape[0]):
+    for j in range(State10.shape[0]):
+        #print("sympy.diff("+str(Model[i,0])+","+str(State[j,0])+")")
+        JFCT10[i,j] = sympy.diff(ModelFCT10[i,0],State10[j,0])
 
-print("JACOBIAN_H:")
-sympy.pprint(JH)
+for i in range(ModelH7.shape[0]):
+    for j in range(State7.shape[0]):
+        #print("sympy.diff("+str(Model[i,0])+","+str(State[j,0])+")")
+        JH7[i,j] = sympy.diff(ModelH7[i,0],State7[j,0])
+
+print("JACOBIAN_F_CT_7:")
+sympy.pprint(JFCT7)
+
+print("JACOBIAN_F_CA_10:")
+sympy.pprint(JFCA10)
+
+print("JACOBIAN_F_CT_10:")
+sympy.pprint(JFCT10)
+
+print("JACOBIAN_H_7:")
+sympy.pprint(JH7)
 
 
