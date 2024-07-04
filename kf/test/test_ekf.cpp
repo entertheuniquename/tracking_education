@@ -88,7 +88,7 @@ TEST (EKF,EKFMath) {
     Eigen::MatrixXd Q0(2,2);
     Q0 << 1., 0.,
           0., 1.;
-    Eigen::MatrixXd z(3,1);
+    Eigen::MatrixXd z(2,1);
     z << 10., 20.;
     double t = 0.2;
     //----------------------------------------------------------------------

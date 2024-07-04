@@ -1,6 +1,7 @@
 #pragma once
 
 #include "utils.h"
+#include "filter.h"
 
 namespace Estimator
 {
@@ -34,7 +35,7 @@ public:
 };
 
 template<class M, class SM, class MM, class GM, class JSM, class JMM>
-class EKF : public EKFMath<M>
+class EKF : public EKFMath<M>, public Filter<M>
 {
 private:
     M state;
@@ -55,14 +56,26 @@ public:
         measurement_noise(in_measurement_noise)
     {}
 
-    M getState()const{return state;}
-    M getCovariance()const{return covariance;}
-    M getStatePredict()const{return state_predict;}
-    M getCovariancePredict()const{return covariance_predict;}
-    M getMeasurementPredict()const{return measurement_predict;}
-    M getCovarianceOfMeasurementPredict()const{return covariance_of_measurement_predict;}
-    bool setState(M& state_in){state = state_in;return true;}
-    bool setCovariance(M& covariance_in){covariance = covariance_in;return true;}
+    EKF(const EKF& ekf):
+        state(ekf.state),
+        covariance(ekf.covariance),
+        process_noise(ekf.process_noise),
+        measurement_noise(ekf.measurement_noise),
+        state_predict(ekf.state_predict),
+        covariance_predict(ekf.covariance_predict),
+        measurement_predict(ekf.measurement_predict),
+        covariance_of_measurement_predict(ekf.covariance_of_measurement_predict),
+        residue(ekf.residue)
+    {}
+
+    M getState()const override{return state;}
+    M getCovariance()const override{return covariance;}
+    M getStatePredict()const override{return state_predict;}
+    M getCovariancePredict()const override{return covariance_predict;}
+    M getMeasurementPredict()const override{return measurement_predict;}
+    M getCovarianceOfMeasurementPredict()const override{return covariance_of_measurement_predict;}
+    bool setState(M& state_in)override{state = state_in;return true;}
+    bool setCovariance(M& covariance_in)override{covariance = covariance_in;return true;}
 
     std::pair<M,M> predict(double dt)
     {
@@ -84,7 +97,6 @@ public:
 
         state = state_predict;
         covariance = covariance_predict;
-
 
         return std::make_pair(state,covariance);
     }

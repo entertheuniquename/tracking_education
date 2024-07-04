@@ -48,8 +48,11 @@ def make_meas(X,R,measureModel):
     return Zn
 
 def estimate(filter,x0,P0,Q0,R,Z,T,**imm_params):
-        mu=np.zeros((1,3))
-        tp=np.zeros((3,3))
+        for key, value in imm_params.items():
+            if(key=="imm_filters_amount"):
+                imm_am=value
+        mu=np.zeros((1,imm_am))
+        tp=np.zeros((imm_am,imm_am))
         is_imm = False
         for key, value in imm_params.items():
             if(key=="MU"):
@@ -63,7 +66,7 @@ def estimate(filter,x0,P0,Q0,R,Z,T,**imm_params):
         else:
             estimator = filter(x0,P0,Q0,R)
         est = np.zeros((x0.shape[0], Z.shape[1]-1))
-        mus = np.zeros((3, Z.shape[1]-1))
+        mus = np.zeros((imm_am, Z.shape[1]-1))
         for col in range(est.shape[1]):
             z = Z[:, col + 1]
             xp = estimator.predict(T)
@@ -78,8 +81,11 @@ def estimate(filter,x0,P0,Q0,R,Z,T,**imm_params):
             return est
 
 def calc_err(X,filter,x0,P0,Q0,R,T,measureModel,gModel,**args):
-    mu=np.zeros((1,3))
-    tp=np.zeros((3,3))
+    for key, value in args.items():
+        if(key=="imm_filters_amount"):
+            imm_am=value
+    mu=np.zeros((1,imm_am))
+    tp=np.zeros((imm_am,imm_am))
     is_imm = False
     for key, value in args.items():
         if(key=="MU"):
@@ -97,13 +103,17 @@ def calc_err(X,filter,x0,P0,Q0,R,T,measureModel,gModel,**args):
     return err
 
 from tqdm import tqdm
+#import multiprocessing
+#process = multiprocessing.Process(target=task)
 
 def calc_std_err(X,filter,x0,P0,Q0,R,measureModel,gModel,T,num_iterations,**args):
+    #process.start()
     var_err = np.zeros((X.shape[0], X.shape[1]-1))
     for i in tqdm(range(num_iterations)):
         err = calc_err(X,filter,x0,P0,Q0,R,T,measureModel,gModel,**args)
         var_err += err ** 2
     var_err /= num_iterations
+    #process.close()
     return np.sqrt(var_err)
 
 def test(filter,x0,P0,Q0,R,stateModel,measureModel,noiseTransitionModel,T,amount,iterations,revers_conner_rad,**args):

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "utils.h"
+#include "filter.h"
 
 namespace Estimator
 {
@@ -149,7 +150,7 @@ private:
 };
 
 template<class M, class SM, class MM, class GM>
-struct EKF_QR : public EKF_QRMath<M>
+struct EKF_QR : public EKF_QRMath<M>, public Filter<M>
 {
 private:
     M state;
@@ -171,14 +172,26 @@ public:
         measurement_noise(measureNoise)
     {}
 
-    M getState()const{return state;}
-    M getCovariance()const{return covariance;}
-    M getStatePredict()const{return state_predict;}
-    M getCovariancePredict()const{return covariance_predict;}
-    M getMeasurementPredict()const{return measurement_predict;}
-    M getCovarianceOfMeasurementPredict()const{return covariance_of_measurement_predict;}
-    bool setState(M& state){state = state;return true;}
-    bool setCovariance(M& covariance){covariance = covariance;return true;}
+    EKF_QR(const EKF_QR& ekf_qr):
+        state(ekf_qr.state),
+        covariance(ekf_qr.covariance),
+        process_noise(ekf_qr.process_noise),
+        measurement_noise(ekf_qr.measurement_noise),
+        state_predict(ekf_qr.state_predict),
+        covariance_predict(ekf_qr.covariance_predict),
+        measurement_predict(ekf_qr.measurement_predict),
+        covariance_of_measurement_predict(ekf_qr.covariance_of_measurement_predict),
+        residue(ekf_qr.residue)
+    {}
+
+    M getState()const override{return state;}
+    M getCovariance()const override{return covariance;}
+    M getStatePredict()const override{return state_predict;}
+    M getCovariancePredict()const override{return covariance_predict;}
+    M getMeasurementPredict()const override{return measurement_predict;}
+    M getCovarianceOfMeasurementPredict()const override{return covariance_of_measurement_predict;}
+    bool setState(M& state)override{state = state;return true;}
+    bool setCovariance(M& covariance)override{covariance = covariance;return true;}
 
     template <class ...TP>
     std::pair<M,M> predict(double dt,TP ...p)
