@@ -11,6 +11,9 @@ void bind_models(pybind11::module &m)
     m.def("BindFCT_10", [](Eigen::MatrixXd x,double dt){
         Models10::FCT<Eigen::MatrixXd> fct;
         return fct(x,dt);});
+    m.def("BindFCTv_10", [](Eigen::MatrixXd x,double dt){
+        Models10::FCTv<Eigen::MatrixXd> fctv;
+        return fctv(x,dt);});
     m.def("BindHXX_10", [](){
         Models10::H<Eigen::MatrixXd> h;
         return h();});

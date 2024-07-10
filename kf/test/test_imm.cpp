@@ -5,7 +5,7 @@
 #include "../source/models.h"
 #include <gtest/gtest.h>
 
-TEST (IMM,IMM) {
+TEST (IMM,imm_base_test) {
     //----------------------------------------------------------------------
     struct stateModel
     {

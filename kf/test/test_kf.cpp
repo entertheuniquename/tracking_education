@@ -2,7 +2,7 @@
 #include "../source/models.h"
 #include <gtest/gtest.h>
 
-TEST (KF,KFMath) {
+TEST (KF,kf_base_test) {
     //----------------------------------------------------------------------
     struct stateModel
     {

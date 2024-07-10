@@ -74,9 +74,9 @@ public:
         covariance(imm.covariance),
         state_predict(imm.state_predict),
         covariance_predict(imm.covariance_predict),
-        //measurement_predict(imm.measurement_predict),
-        //covariance_of_measurement_predict(imm.covariance_of_measurement_predict),
-        //residue(imm.residue)
+        //measurement_predict(imm.measurement_predict), //#TODO - сделать правильную инициализацию по образу остальных фильтров
+        //covariance_of_measurement_predict(imm.covariance_of_measurement_predict), //#TODO - сделать правильную инициализацию по образу остальных фильтров
+        //residue(imm.residue) //#TODO - сделать правильную инициализацию по образу остальных фильтров
         mu(imm.mu),
         tp(imm.tp),
         estimators{new Estimators(&imm.estimators)...}
@@ -220,8 +220,8 @@ public:
     M getCovariance()const override{return covariance;}
     M getStatePredict()const override{return state_predict;}
     M getCovariancePredict()const override{return covariance_predict;}
-    M getMeasurementPredict()const override{return M();}//#ZAGL
-    M getCovarianceOfMeasurementPredict()const override{return M();}//#ZAGL
+    M getMeasurementPredict()const override{return M();}//#ZAGL //#TODO - сделать правильный возврат
+    M getCovarianceOfMeasurementPredict()const override{return M();}//#ZAGL //#TODO - сделать правильный возврат
     bool setState(M& state_in)override{state = state_in;return true;}
     bool setCovariance(M& covariance_in)override{covariance = covariance_in;return true;}
 

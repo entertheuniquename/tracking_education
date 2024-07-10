@@ -2,7 +2,7 @@
 #include "../source/models.h"
 #include <gtest/gtest.h>
 
-TEST (EKF,EKFMath) {
+TEST (EKF,ekf_base_test) {
     //----------------------------------------------------------------------
     struct stateModel
     {
