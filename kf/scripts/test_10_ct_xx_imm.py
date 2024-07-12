@@ -85,9 +85,9 @@ imm_est_2g, mus_2g = stand.estimate(e.BindIMM_10_KFCV_EKFCT_KFCA,x0_2g,P0,Q0,Rp,
 imm_est_5g, mus_5g = stand.estimate(e.BindIMM_10_KFCV_EKFCT_KFCA,x0_5g,P0,Q0,Rp,Zn5G,T,MU=mu,TP=tp,imm_filters_amount=3)
 imm_est_8g, mus_8g = stand.estimate(e.BindIMM_10_KFCV_EKFCT_KFCA,x0_8g,P0,Q0,Rp,Zn8G,T,MU=mu,TP=tp,imm_filters_amount=3)
 
-imm4_est_2g, mus4_2g = stand.estimate(e.BindIMM_10_KFCV_EKFCT_KFCA_EKFCA,x0_2g,P0,Q0,Rp,Zn2G,T,MU=mu4,TP=tp4,imm_filters_amount=4)
-imm4_est_5g, mus4_5g = stand.estimate(e.BindIMM_10_KFCV_EKFCT_KFCA_EKFCA,x0_5g,P0,Q0,Rp,Zn5G,T,MU=mu4,TP=tp4,imm_filters_amount=4)
-imm4_est_8g, mus4_8g = stand.estimate(e.BindIMM_10_KFCV_EKFCT_KFCA_EKFCA,x0_8g,P0,Q0,Rp,Zn8G,T,MU=mu4,TP=tp4,imm_filters_amount=4)
+imm4_est_2g, mus4_2g = stand.estimate(e.BindIMM_10_KFCV_EKFCT_KFCA_EKFCTv,x0_2g,P0,Q0,Rp,Zn2G,T,MU=mu4,TP=tp4,imm_filters_amount=4)
+imm4_est_5g, mus4_5g = stand.estimate(e.BindIMM_10_KFCV_EKFCT_KFCA_EKFCTv,x0_5g,P0,Q0,Rp,Zn5G,T,MU=mu4,TP=tp4,imm_filters_amount=4)
+imm4_est_8g, mus4_8g = stand.estimate(e.BindIMM_10_KFCV_EKFCT_KFCA_EKFCTv,x0_8g,P0,Q0,Rp,Zn8G,T,MU=mu4,TP=tp4,imm_filters_amount=4)
 
 [fff0, imm_std_err_2g] = stand.test(e.BindIMM_10_KFCV_EKFCT_KFCA,
                                    x0_2g,P0,Q0,Rp,
@@ -110,21 +110,21 @@ imm4_est_8g, mus4_8g = stand.estimate(e.BindIMM_10_KFCV_EKFCT_KFCA_EKFCA,x0_8g,P
                                    e.BindG_10,
                                    6,100,2000,0.392,MU=mu,TP=tp,imm_filters_amount=3)
 
-[fff40, imm4_std_err_2g] = stand.test(e.BindIMM_10_KFCV_EKFCT_KFCA_EKFCA,
+[fff40, imm4_std_err_2g] = stand.test(e.BindIMM_10_KFCV_EKFCT_KFCA_EKFCTv,
                                       x0_2g,P0,Q0,Rp,
                                       e.BindFCT_10,
                                       e.BindHXX_10,
                                       e.BindG_10,
                                       6,100,2000,0.098,MU=mu4,TP=tp4,imm_filters_amount=4)
 
-[fff41, imm4_std_err_5g] = stand.test(e.BindIMM_10_KFCV_EKFCT_KFCA_EKFCA,
+[fff41, imm4_std_err_5g] = stand.test(e.BindIMM_10_KFCV_EKFCT_KFCA_EKFCTv,
                                       x0_5g,P0,Q0,Rp,
                                       e.BindFCT_10,
                                       e.BindHXX_10,
                                       e.BindG_10,
                                       6,100,2000,0.098,MU=mu4,TP=tp4,imm_filters_amount=4)
 
-[fff41, imm4_std_err_8g] = stand.test(e.BindIMM_10_KFCV_EKFCT_KFCA_EKFCA,
+[fff41, imm4_std_err_8g] = stand.test(e.BindIMM_10_KFCV_EKFCT_KFCA_EKFCTv,
                                       x0_8g,P0,Q0,Rp,
                                       e.BindFCT_10,
                                       e.BindHXX_10,
@@ -264,7 +264,7 @@ ax12 = fig.add_subplot(4,4,14)
 ax12.plot(mus4_2g[0, :], label='KF+CV', marker='', color='green')
 ax12.plot(mus4_2g[1, :], label='EKF+CT', marker='', color='orange')
 ax12.plot(mus4_2g[2, :], label='KF+CA', marker='', color='red')
-ax12.plot(mus4_2g[3, :], label='EKF+CA', marker='', color='purple')
+ax12.plot(mus4_2g[3, :], label='EKF+CTv', marker='', color='purple')
 ax12.set_title("mu[4](2G)")
 ax12.set_xlabel('iteration')
 ax12.set_ylabel('mu')
@@ -275,7 +275,7 @@ ax13 = fig.add_subplot(4,4,15)
 ax13.plot(mus4_5g[0, :], label='KF+CV', marker='', color='green')
 ax13.plot(mus4_5g[1, :], label='EKF+CT', marker='', color='orange')
 ax13.plot(mus4_5g[2, :], label='KF+CA', marker='', color='red')
-ax13.plot(mus4_5g[3, :], label='EKF+CA', marker='', color='purple')
+ax13.plot(mus4_5g[3, :], label='EKF+CTv', marker='', color='purple')
 ax13.set_title("mu[4](5G)")
 ax13.set_xlabel('iteration')
 ax13.set_ylabel('mu')
@@ -286,7 +286,7 @@ ax14 = fig.add_subplot(4,4,16)
 ax14.plot(mus4_8g[0, :], label='KF+CV', marker='', color='green')
 ax14.plot(mus4_8g[1, :], label='EKF+CT', marker='', color='orange')
 ax14.plot(mus4_8g[2, :], label='KF+CA', marker='', color='red')
-ax14.plot(mus4_8g[3, :], label='EKF+CA', marker='', color='purple')
+ax14.plot(mus4_8g[3, :], label='EKF+CTv', marker='', color='purple')
 ax14.set_title("mu[4](8G)")
 ax14.set_xlabel('iteration')
 ax14.set_ylabel('mu')

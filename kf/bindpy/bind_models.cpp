@@ -29,6 +29,9 @@ void bind_models(pybind11::module &m)
     m.def("BindFCTJ_10", [](Eigen::MatrixXd x, double t){
           Models10::FCT_Jacobian<Eigen::MatrixXd> mm;
           return mm(x,t); });
+    m.def("BindFCTvJ_10", [](Eigen::MatrixXd x, double t){
+          Models10::FCTv_Jacobian<Eigen::MatrixXd> mm;
+          return mm(x,t); });
     m.def("BindHJ_10", [](Eigen::MatrixXd x){//#TODO - заменить на BindHXXJ
           Models10::H_Jacobian<Eigen::MatrixXd> mm;
           return mm(x); });

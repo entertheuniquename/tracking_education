@@ -41,7 +41,7 @@ public:
     Eigen::MatrixXd mu(){return imm.getMU();}
 };
 
-class BindIMM_10_KFCV_EKFCT_KFCA_EKFCA
+class BindIMM_10_KFCV_EKFCT_KFCA_EKFCTv
 {
 private:
     Estimator::IMM<Eigen::MatrixXd,
@@ -60,19 +60,19 @@ private:
                   Models10::H<Eigen::MatrixXd>,
                   Models10::G<Eigen::MatrixXd>>,
     Estimator::EKF<Eigen::MatrixXd,
-                   Models10::FCA<Eigen::MatrixXd>,
+                   Models10::FCTv<Eigen::MatrixXd>,
                    Models10::H<Eigen::MatrixXd>,
                    Models10::G<Eigen::MatrixXd>,
-                   Models10::FCA_Jacobian<Eigen::MatrixXd>,
+                   Models10::FCTv_Jacobian<Eigen::MatrixXd>,
                    Models10::H_Jacobian<Eigen::MatrixXd>>> imm;
 public:
 
-    BindIMM_10_KFCV_EKFCT_KFCA_EKFCA(Eigen::MatrixXd in_state,
-                                     Eigen::MatrixXd in_covariance,
-                                     Eigen::MatrixXd in_process_noise,
-                                     Eigen::MatrixXd in_measurement_noise,
-                                     Eigen::MatrixXd in_mu,
-                                     Eigen::MatrixXd in_tp):
+    BindIMM_10_KFCV_EKFCT_KFCA_EKFCTv(Eigen::MatrixXd in_state,
+                                      Eigen::MatrixXd in_covariance,
+                                      Eigen::MatrixXd in_process_noise,
+                                      Eigen::MatrixXd in_measurement_noise,
+                                      Eigen::MatrixXd in_mu,
+                                      Eigen::MatrixXd in_tp):
         imm(in_mu,
             in_tp,
             in_state,
@@ -93,9 +93,9 @@ void bind_imm(pybind11::module &m)
         .def("predict",&BindIMM_10_KFCV_EKFCT_KFCA::predict)
         .def("correct",&BindIMM_10_KFCV_EKFCT_KFCA::correct)
         .def("mu",&BindIMM_10_KFCV_EKFCT_KFCA::mu);
-    py::class_<BindIMM_10_KFCV_EKFCT_KFCA_EKFCA>(m, "BindIMM_10_KFCV_EKFCT_KFCA_EKFCA")
+    py::class_<BindIMM_10_KFCV_EKFCT_KFCA_EKFCTv>(m, "BindIMM_10_KFCV_EKFCT_KFCA_EKFCTv")
         .def(py::init<Eigen::MatrixXd,Eigen::MatrixXd,Eigen::MatrixXd,Eigen::MatrixXd,Eigen::MatrixXd,Eigen::MatrixXd>())
-        .def("predict",&BindIMM_10_KFCV_EKFCT_KFCA_EKFCA::predict)
-        .def("correct",&BindIMM_10_KFCV_EKFCT_KFCA_EKFCA::correct)
-        .def("mu",&BindIMM_10_KFCV_EKFCT_KFCA_EKFCA::mu);
+        .def("predict",&BindIMM_10_KFCV_EKFCT_KFCA_EKFCTv::predict)
+        .def("correct",&BindIMM_10_KFCV_EKFCT_KFCA_EKFCTv::correct)
+        .def("mu",&BindIMM_10_KFCV_EKFCT_KFCA_EKFCTv::mu);
 }

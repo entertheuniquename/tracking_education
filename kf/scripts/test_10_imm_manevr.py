@@ -11,13 +11,13 @@ import estimator as e
 import math
 import stand_10_manevr as stand
 
-T = 1.
+T = 0.2
 process_var = 1.
 process_var_w = 0.000000001
 meas_std = 300.
 velo_std = 30.
 acc_std = 3.
-w_std = 0.392
+w_std = 0.441
 
 Rp = np.diag([pow(meas_std,2), pow(meas_std,2), pow(meas_std,2)])
 Rv = np.diag([pow(velo_std,2), pow(velo_std,2), pow(velo_std,2)])
@@ -68,6 +68,7 @@ tp4 = np.array([[0.91, 0.03, 0.03, 0.03],
                 [0.03, 0.03, 0.03, 0.91]])
 
 imm_est_2g, mus_2g = stand.estimate(e.BindIMM_10_KFCV_EKFCT_KFCA,x0_2g,P0,Q0,Rp,Zn2G,T,MU=mu,TP=tp,imm_filters_amount=3)
+imm4_est_2g, mus4_2g = stand.estimate(e.BindIMM_10_KFCV_EKFCT_KFCA_EKFCTv,x0_2g,P0,Q0,Rp,Zn2G,T,MU=mu4,TP=tp4,imm_filters_amount=4)
 
 [fff0, imm_std_err_2g] = stand.test(e.BindIMM_10_KFCV_EKFCT_KFCA,
                                    x0_2g,P0,Q0,Rp,
@@ -76,12 +77,20 @@ imm_est_2g, mus_2g = stand.estimate(e.BindIMM_10_KFCV_EKFCT_KFCA,x0_2g,P0,Q0,Rp,
                                    e.BindG_10,
                                    6,100,2000,0.098,MU=mu,TP=tp,imm_filters_amount=3)
 
+[fff1, imm4_std_err_2g] = stand.test(e.BindIMM_10_KFCV_EKFCT_KFCA_EKFCTv,
+                                     x0_2g,P0,Q0,Rp,
+                                     e.BindFCT_10,
+                                     e.BindHXX_10,
+                                     e.BindG_10,
+                                     6,100,2000,0.098,MU=mu4,TP=tp4,imm_filters_amount=4)
+
 fig = plt.figure("Тест для исследования работы фильтра IMM с состояниями типа [x,vx,ax,y,vy,ay,z,vz,az,w] и измерениями типа [x,y,z] вусловиях маневра 9G",figsize=(21,11))
 
 ax1 = fig.add_subplot(4,1,1)
 ax1.plot(X2G[0, :], X2G[3, :], label='true(2G)', marker='', color='black')
 ax1.plot(Zn2G[0, :], Zn2G[1, :], label='measurement(2G)', marker='x', color='grey')
 ax1.plot(imm_est_2g[0, :], imm_est_2g[3, :], label='imm[3](2G)', marker='', color='red')
+ax1.plot(imm4_est_2g[0, :], imm4_est_2g[3, :], label='imm[4](2G)', marker='', color='purple')
 ax1.set_title("Y(X)")
 ax1.set_xlabel('x,met')
 ax1.set_ylabel('y,met')
@@ -92,6 +101,7 @@ ax0 = fig.add_subplot(4,1,2)
 ax0.plot(X2G[0, :], X2G[6, :], label='true(2G)', marker='', color='black')
 ax0.plot(Zn2G[0, :], Zn2G[2, :], label='measurement(2G)', marker='x', color='grey')
 ax0.plot(imm_est_2g[0, :], imm_est_2g[6, :], label='imm[3](2G)', marker='', color='red')
+ax0.plot(imm4_est_2g[0, :], imm4_est_2g[6, :], label='imm[4](2G)', marker='', color='purple')
 ax0.set_title("Z(X)")
 ax0.set_xlabel('x,met')
 ax0.set_ylabel('z,met')
@@ -100,6 +110,7 @@ plt.legend()
 
 ax2 = fig.add_subplot(4,4,9)
 ax2.plot((np.arange(len(imm_std_err_2g[0, :]))+1)*T, imm_std_err_2g[0, :].T, label='imm[3](2G)', marker='', color='red')
+ax2.plot((np.arange(len(imm4_std_err_2g[0, :]))+1)*T, imm4_std_err_2g[0, :].T, label='imm[4](2G)', marker='', color='purple')
 ax2.set_title("std_err_x(iteration)")
 ax2.set_xlabel('Time,s')
 ax2.set_ylabel('std_err_x, met')
@@ -108,6 +119,7 @@ plt.legend()
 
 ax3 = fig.add_subplot(4,4,13)
 ax3.plot((np.arange(len(imm_std_err_2g[1, :]))+1)*T, imm_std_err_2g[1, :].T, label='imm[3](2G)', marker='', color='red')
+ax3.plot((np.arange(len(imm4_std_err_2g[1, :]))+1)*T, imm4_std_err_2g[1, :].T, label='imm[4](2G)', marker='', color='purple')
 ax3.set_title("err_vx(iteration)")
 ax3.set_xlabel('Time,s')
 ax3.set_ylabel('std_err_vx, met')
@@ -116,6 +128,7 @@ plt.legend()
 
 ax4 = fig.add_subplot(4,4,10)
 ax4.plot((np.arange(len(imm_std_err_2g[3, :]))+1)*T, imm_std_err_2g[3, :].T, label='imm[3](2G)', marker='', color='red')
+ax4.plot((np.arange(len(imm4_std_err_2g[3, :]))+1)*T, imm4_std_err_2g[3, :].T, label='imm[4](2G)', marker='', color='purple')
 ax4.set_title("std_err_y(iteration)")
 ax4.set_xlabel('Time,s')
 ax4.set_ylabel('std_err_y, met')
@@ -124,6 +137,7 @@ plt.legend()
 
 ax5 = fig.add_subplot(4,4,14)
 ax5.plot((np.arange(len(imm_std_err_2g[4, :]))+1)*T, imm_std_err_2g[4, :].T, label='imm[3](2G)', marker='', color='red')
+ax5.plot((np.arange(len(imm4_std_err_2g[4, :]))+1)*T, imm4_std_err_2g[4, :].T, label='imm[4](2G)', marker='', color='purple')
 ax5.set_title("err_vy(iteration)")
 ax5.set_xlabel('Time,s')
 ax5.set_ylabel('std_err_vy, met')
@@ -132,6 +146,7 @@ plt.legend()
 
 ax6 = fig.add_subplot(4,4,11)
 ax6.plot((np.arange(len(imm_std_err_2g[6, :]))+1)*T, imm_std_err_2g[6, :].T, label='imm[3](2G)', marker='', color='red')
+ax6.plot((np.arange(len(imm4_std_err_2g[6, :]))+1)*T, imm4_std_err_2g[6, :].T, label='imm[4](2G)', marker='', color='purple')
 ax6.set_title("std_err_z(iteration)")
 ax6.set_xlabel('Time,s')
 ax6.set_ylabel('std_err_z, met')
@@ -140,13 +155,14 @@ plt.legend()
 
 ax7 = fig.add_subplot(4,4,15)
 ax7.plot((np.arange(len(imm_std_err_2g[7, :]))+1)*T, imm_std_err_2g[7, :].T, label='imm[3](2G)', marker='', color='red')
+ax7.plot((np.arange(len(imm4_std_err_2g[7, :]))+1)*T, imm4_std_err_2g[7, :].T, label='imm[4](2G)', marker='', color='purple')
 ax7.set_title("err_vz(iteration)")
 ax7.set_xlabel('Time,s')
 ax7.set_ylabel('std_err_vz, met')
 ax7.grid(True)
 plt.legend()
 
-ax9 = fig.add_subplot(2,4,8)
+ax9 = fig.add_subplot(4,4,12)
 ax9.plot(mus_2g[0, :], label='KF+CV', marker='', color='green')
 ax9.plot(mus_2g[1, :], label='EKF+CT', marker='', color='orange')
 ax9.plot(mus_2g[2, :], label='KF+CA', marker='', color='red')
@@ -154,6 +170,17 @@ ax9.set_title("mu[3](2G)")
 ax9.set_xlabel('iteration')
 ax9.set_ylabel('mu')
 ax9.grid(True)
+plt.legend()
+
+ax10 = fig.add_subplot(4,4,16)
+ax10.plot(mus4_2g[0, :], label='KF+CV', marker='', color='green')
+ax10.plot(mus4_2g[1, :], label='EKF+CT', marker='', color='orange')
+ax10.plot(mus4_2g[2, :], label='KF+CA', marker='', color='red')
+ax10.plot(mus4_2g[3, :], label='EKF+CTv', marker='', color='purple')
+ax10.set_title("mu[4](2G)")
+ax10.set_xlabel('iteration')
+ax10.set_ylabel('mu')
+ax10.grid(True)
 plt.legend()
 
 plt.show()
