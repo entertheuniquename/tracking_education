@@ -10,26 +10,12 @@ from IPython.display import Markdown as md
 import estimator as e
 import math
 
-def reversLines(amount,T,revers_conner):
-    turn_amount=180./(revers_conner*(180./math.pi))
-    line1 = (amount-turn_amount/T)/2
-    line2 = line1
-    if(line1%2>0):
-        line1 = math.ceil(line1)
-        line2 = math.floor(line2)
-    return int(line1),int(turn_amount/T),int(line2)
-
 def make_true_data(x0,amount,stateModel,T,revers_conner):
     X = np.zeros((x0.shape[0], amount))
     X[:, 0] = x0.T
-    [l1,l2,l3] = reversLines(amount,T,revers_conner)
     for i in range(X.shape[1]-1):
         xxx = np.copy(X[:, i])
-        xxx[-1] = 0
-        if (i>l1-1):
-            xxx[-1] = revers_conner
-        if (i>l1+l2-1):
-            xxx[-1] = 0
+        xxx[-1] = revers_conner
         xx = stateModel(xxx,T)
         xx1 = xx.flatten()
         X[:, i+1] = xx.flatten()
