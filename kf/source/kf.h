@@ -74,6 +74,15 @@ public:
     M getStatePredict()const override{return state_predict;}
     M getCovariancePredict()const override{return covariance_predict;}
     M getMeasurementPredict()const override{return measurement_predict;}
+    std::pair<M,M> getMeasurementPredictData(const double& dt)const override/*const override*/
+    {
+        M xp = SM()(state,dt);
+        M Pp = Utils::transpose(SM()(Utils::transpose(SM()(covariance,dt)),dt)) + GM()(dt)*process_noise*Utils::transpose(GM()(dt));
+        Pp = (Pp + Utils::transpose(Pp))/2.;
+        M zp = MM()(xp);
+        M Se = MM()()*Pp*Utils::transpose(MM()()) + measurement_noise;
+        return std::make_pair(zp,Se);
+    }
     M getCovarianceOfMeasurementPredict()const override{return covariance_of_measurement_predict;}
     bool setState(M& state_in)override{state = state_in;return true;}
     bool setCovariance(M& covariance_in)override{covariance = covariance_in;return true;}

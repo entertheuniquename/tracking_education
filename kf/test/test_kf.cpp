@@ -63,12 +63,14 @@ TEST (KF,kf_base_test) {
     z << 10., 20.;
     double t = 0.2;
     //----------------------------------------------------------------------
-
-    Estimator::KFMath<Eigen::MatrixXd> kf_math;
     Estimator::KF<Eigen::MatrixXd,
                   stateModel,
                   measureModel,
                   noiseTransitionModel> kf(x0,P0,Q0,R);
+
+    auto predData = kf.getMeasurementPredictData(t);
+    Eigen::MatrixXd zp0 = predData.first;
+    Eigen::MatrixXd Se0 = predData.second;
 
     auto pred = kf.predict(t);
     Eigen::MatrixXd xp1 = pred.first;
@@ -78,6 +80,10 @@ TEST (KF,kf_base_test) {
     Eigen::MatrixXd xc1 = corr.first;
     Eigen::MatrixXd Pc1 = corr.second;
     Eigen::MatrixXd Sc1 = kf.getCovarianceOfMeasurementPredict();
+    Eigen::MatrixXd zp1 = kf.getMeasurementPredict();
+
+    ASSERT_TRUE(zp1.isApprox(zp0,0.00001));
+    ASSERT_TRUE(Sc1.isApprox(Se0,0.00001));
 
     //FROM filterpy_test_kf.py
     Eigen::MatrixXd filterpy_xp1(4,1);

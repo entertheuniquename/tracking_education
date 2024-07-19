@@ -84,12 +84,14 @@ class Track
 {
 private:
     Estimator::Filter<M>* estimator;
+    //double price;
     double timepoint;
     bool is_init;
 public:
     Track():
         timepoint(0.),
         estimator(nullptr),
+        //price(0.),
         is_init(false)
     {}
 
@@ -133,7 +135,11 @@ public:
     }
     M getState(){return estimator->getState();}
     M getCovariance(){return estimator->getCovariance();}
+    M getMeasurementPredict(){return estimator->getMeasurementPredict();}
+    std::pair<M,M> getMeasurementPredictData(const double& dt){return estimator->getMeasurementPredictData(dt);}//#TODO
+    M getCovarianceOfMeasurementPredict(){return estimator->getCovarianceOfMeasurementPredict();}
     bool isInit(){return is_init;}
+    //double getPrice()const{return price;}
 };
 
 }

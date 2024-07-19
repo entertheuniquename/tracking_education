@@ -110,3 +110,31 @@ TEST (Track,track_base_test) {
     ASSERT_TRUE(Pc1.isApprox(filterpy_Pc1,0.001));
 
 }
+
+TEST (Track,track_getMeasurementPredictData_test) {
+    Tracker::Track<Eigen::MatrixXd,Tracker::Measurement3<Eigen::MatrixXd>> track10;
+    ASSERT_TRUE(track10.isInit()==false);
+
+    Tracker::Measurement3<Eigen::MatrixXd> m10{12345.,100.,200.,300.,40.,50.,60.,7.,8.,9.,1.1,1.,1.,1.,0.,0.,0.};
+
+    track10.initialization<Tracker::EstimatorInitializator10<Eigen::MatrixXd,
+                                                             Estimator::KF<Eigen::MatrixXd,
+                                                                           Models10::FCV<Eigen::MatrixXd>,
+                                                                           Models10::H<Eigen::MatrixXd>,
+                                                                           Models10::G<Eigen::MatrixXd>>,
+                                                             Tracker::Measurement3<Eigen::MatrixXd>>>(m10);
+    ASSERT_TRUE(track10.isInit()==true);
+
+    Tracker::Measurement3<Eigen::MatrixXd> m10_step1{12345.+6.,110.,210.,310.,41.,51.,61.,0.,0.,0.,0.0,0.,0.,0.,0.,0.,0.};
+    auto data0 = track10.getMeasurementPredictData(m10_step1.timepoint()-m10.timepoint());
+    Eigen::MatrixXd zp0 = data0.first;
+    Eigen::MatrixXd Se0 = data0.second;
+    auto data_step = track10.step(m10_step1);
+    Eigen::MatrixXd zp1 = track10.getMeasurementPredict();
+    Eigen::MatrixXd Se1 = track10.getCovarianceOfMeasurementPredict();
+
+    ASSERT_TRUE(zp0.isApprox(zp1,0.00001));
+    ASSERT_TRUE(Se0.isApprox(Se1,0.00001));
+
+}
+
