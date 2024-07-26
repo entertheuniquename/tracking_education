@@ -11,6 +11,9 @@ void bind_models(pybind11::module &m)
     m.def("BindFCT_10", [](Eigen::MatrixXd x,double dt){
         Models10::FCT<Eigen::MatrixXd> fct;
         return fct(x,dt);});
+    m.def("BindFCT_deg_10", [](Eigen::MatrixXd x,double dt){
+        Models10::FCT_deg<Eigen::MatrixXd> fct;
+        return fct(x,dt);});
     m.def("BindFCTv_10", [](Eigen::MatrixXd x,double dt){
         Models10::FCTv<Eigen::MatrixXd> fctv;
         return fctv(x,dt);});
@@ -72,14 +75,6 @@ void bind_models(pybind11::module &m)
           return mm(x,t); });
     m.def("FCT10", [](Eigen::MatrixXd x, double t){
           Models10::FCT<Eigen::MatrixXd> mm;
-          return mm(x,t); });
-    m.def("FCTdegJ10", [](Eigen::MatrixXd x, double t){
-          Models10::FCT_deg_Jacobian<Eigen::MatrixXd> mm;
-          return mm(x,t); });
-    m.def("FCTdeg10", [](Eigen::MatrixXd x, double t){
-          std::cout << "FCTdeg10:" << std::endl;
-          //std::cout << "-> " << std::endl << x << std::endl << t << std::endl;
-          Models10::FCT_deg<Eigen::MatrixXd> mm;
           return mm(x,t); });
     m.def("H10", [](Eigen::MatrixXd x){
           Models10::H<Eigen::MatrixXd> mm;

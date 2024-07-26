@@ -13,11 +13,11 @@ import stand_10_ct_xx_round as stand
 
 T = 6
 process_var = 1
-process_var_w = 0.001
+process_var_w = 10
 meas_std = 300
 velo_std = 30
 acc_std = 3
-w_std = 0.392
+w_std = 22.46
 
 Rp = np.diag([pow(meas_std,2), pow(meas_std,2), pow(meas_std,2)])
 Rv = np.diag([pow(velo_std,2), pow(velo_std,2), pow(velo_std,2)])
@@ -29,11 +29,6 @@ Q0 = np.diag([process_var, process_var, process_var, process_var_w])
 G = e.BindG_10
 
 Q = G(T)@Q0@G(T).T
-
-print("Q0")
-print(Q0)
-print("Q")
-print(Q)
 
 x0_2g = np.array([400000., 200., 0., 0., 0., 0., 0., 0., 0., 0.])
 x0_2g = x0_2g[:, np.newaxis]
@@ -61,9 +56,9 @@ B = np.zeros((10,10))
 
 amount = 100
 
-X2G = stand.make_true_data(x0_2g,amount,e.BindFCT_10,T,0.098)
-X5G = stand.make_true_data(x0_5g,amount,e.BindFCT_10,T,0.245)
-X8G = stand.make_true_data(x0_8g,amount,e.BindFCT_10,T,0.392)
+X2G = stand.make_true_data(x0_2g,amount,e.BindFCT_deg_10,T,5.61)
+X5G = stand.make_true_data(x0_5g,amount,e.BindFCT_deg_10,T,14.08)
+X8G = stand.make_true_data(x0_8g,amount,e.BindFCT_deg_10,T,22.46)
 
 Xn2G = stand.add_process_noise(X2G,Q)
 Xn5G = stand.add_process_noise(X5G,Q)
@@ -73,34 +68,34 @@ Zn2G = stand.make_meas(Xn2G,Rp,e.BindHXX_10)
 Zn5G = stand.make_meas(Xn5G,Rp,e.BindHXX_10)
 Zn8G = stand.make_meas(Xn8G,Rp,e.BindHXX_10)
 
-ekf_ct_est_2g = stand.estimate(e.BindEKF_10_CT_XX,x0_2g,P0,Q0,Rp,Zn2G,T)
-ekf_ct_est_5g = stand.estimate(e.BindEKF_10_CT_XX,x0_5g,P0,Q0,Rp,Zn5G,T)
-ekf_ct_est_8g = stand.estimate(e.BindEKF_10_CT_XX,x0_8g,P0,Q0,Rp,Zn8G,T)
+ekf_ct_est_2g = stand.estimate(e.BindEKF_10_CT_deg_XX,x0_2g,P0,Q0,Rp,Zn2G,T)
+ekf_ct_est_5g = stand.estimate(e.BindEKF_10_CT_deg_XX,x0_5g,P0,Q0,Rp,Zn5G,T)
+ekf_ct_est_8g = stand.estimate(e.BindEKF_10_CT_deg_XX,x0_8g,P0,Q0,Rp,Zn8G,T)
 
 #ekf_ca_est_2g = stand.estimate(e.BindEKF_10_CA_XX,x0_2g,P0,Q0,Rp,Zn2G,T)
 #ekf_ca_est_5g = stand.estimate(e.BindEKF_10_CA_XX,x0_5g,P0,Q0,Rp,Zn5G,T)
 #ekf_ca_est_8g = stand.estimate(e.BindEKF_10_CA_XX,x0_8g,P0,Q0,Rp,Zn8G,T)
 
-[ddd0, ekf_ct_std_err_2g] = stand.test(e.BindEKF_10_CT_XX,
+[ddd0, ekf_ct_std_err_2g] = stand.test(e.BindEKF_10_CT_deg_XX,
                                        x0_2g,P0,Q0,Rp,
-                                       e.BindFCT_10,
+                                       e.BindFCT_deg_10,
                                        e.BindHXX_10,
                                        e.BindG_10,
-                                       6,100,2000,0.098)
+                                       6,100,2000,5.61)
 
-[ddd1, ekf_ct_std_err_5g] = stand.test(e.BindEKF_10_CT_XX,
+[ddd1, ekf_ct_std_err_5g] = stand.test(e.BindEKF_10_CT_deg_XX,
                                        x0_5g,P0,Q0,Rp,
-                                       e.BindFCT_10,
+                                       e.BindFCT_deg_10,
                                        e.BindHXX_10,
                                        e.BindG_10,
-                                       6,100,2000,0.245)
+                                       6,100,2000,14.08)
 
-[ddd2, ekf_ct_std_err_8g] = stand.test(e.BindEKF_10_CT_XX,
+[ddd2, ekf_ct_std_err_8g] = stand.test(e.BindEKF_10_CT_deg_XX,
                                        x0_8g,P0,Q0,Rp,
-                                       e.BindFCT_10,
+                                       e.BindFCT_deg_10,
                                        e.BindHXX_10,
                                        e.BindG_10,
-                                       6,100,2000,0.392)
+                                       6,100,2000,22.46)
 
 #[eee2, ekf_ca_std_err_2g] = stand.test(e.BindEKF_10_CA_XX,
 #                                       x0_2g,P0,Q0,Rp,

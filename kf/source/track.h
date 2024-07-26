@@ -79,23 +79,24 @@ public:
     }
 };
 
-template<class M, class MeasurementType>
+template<class M, class MeasurementType, class EstimatorInitType>
 class Track
 {
 private:
     Estimator::Filter<M>* estimator;
-    //double price;
+    //double price;//#TODO
     double timepoint;
     bool is_init;
 public:
+    long long unsigned int id;
     Track():
         timepoint(0.),
         estimator(nullptr),
-        //price(0.),
+        //price(0.),//#TODO
         is_init(false)
     {}
 
-    template<class EstimatorInitializator>
+    template<class EstimatorInitializator=EstimatorInitType>
     void initialization(MeasurementType m)
     {
         estimator=EstimatorInitializator()(m);
@@ -139,7 +140,7 @@ public:
     std::pair<M,M> getMeasurementPredictData(const double& dt){return estimator->getMeasurementPredictData(dt);}//#TODO
     M getCovarianceOfMeasurementPredict(){return estimator->getCovarianceOfMeasurementPredict();}
     bool isInit(){return is_init;}
-    //double getPrice()const{return price;}
+    double getTimePoint(){return timepoint;}
+    //double getPrice()const{return price;}//#TODO
 };
-
 }

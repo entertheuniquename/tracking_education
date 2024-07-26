@@ -7,18 +7,21 @@
 #include <gtest/gtest.h>
 
 TEST (Track,track_base_test) {
-    Tracker::Track<Eigen::MatrixXd,Tracker::Measurement3<Eigen::MatrixXd>> track10;
+    Tracker::Track<Eigen::MatrixXd,
+                   Tracker::Measurement3<Eigen::MatrixXd>,
+                   Tracker::EstimatorInitializator10<Eigen::MatrixXd,
+                                                     Estimator::KF<Eigen::MatrixXd,
+                                                                   Models10::FCV<Eigen::MatrixXd>,
+                                                                   Models10::H<Eigen::MatrixXd>,
+                                                                   Models10::G<Eigen::MatrixXd>>,
+                                                     Tracker::Measurement3<Eigen::MatrixXd>>> track10;
     ASSERT_TRUE(track10.isInit()==false);
 
     Tracker::Measurement3<Eigen::MatrixXd> m10{12345.,100.,200.,300.,40.,50.,60.,7.,8.,9.,1.1,1.,1.,1.,0.,0.,0.};
 
-    track10.initialization<Tracker::EstimatorInitializator10<Eigen::MatrixXd,
-                                                             Estimator::KF<Eigen::MatrixXd,
-                                                                           Models10::FCV<Eigen::MatrixXd>,
-                                                                           Models10::H<Eigen::MatrixXd>,
-                                                                           Models10::G<Eigen::MatrixXd>>,
-                                                             Tracker::Measurement3<Eigen::MatrixXd>>>(m10);
+    track10.initialization(m10);
     ASSERT_TRUE(track10.isInit()==true);
+
     track10.initialization<Tracker::EstimatorInitializator10<Eigen::MatrixXd,
                                                              Estimator::EKF<Eigen::MatrixXd,
                                                                             Models10::FCA<Eigen::MatrixXd>,
@@ -71,18 +74,20 @@ TEST (Track,track_base_test) {
         }
     };
     //----------------------------------------------------------------------
-    Tracker::Track<Eigen::MatrixXd,Tracker::Measurement2<Eigen::MatrixXd>> track4;
+    Tracker::Track<Eigen::MatrixXd,
+                   Tracker::Measurement2<Eigen::MatrixXd>,
+                   Tracker::EstimatorInitializator4<Eigen::MatrixXd,
+                                                    Estimator::KF<Eigen::MatrixXd,
+                                                                  stateModel,
+                                                                  measureModel,
+                                                                  noiseTransitionModel>,
+                                                    Tracker::Measurement2<Eigen::MatrixXd>>> track4;
     ASSERT_TRUE(track4.isInit()==false);
 
     Tracker::Measurement2<Eigen::MatrixXd> m4_init{0.,1.,3.,0.,0.,0.,0.,0.,0.,0.,0.,1.,1.,0.,0.,0.,0.,};
     Tracker::Measurement2<Eigen::MatrixXd> m4_step{m4_init.timepoint()+0.2,10.,20.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,};
 
-    track4.initialization<Tracker::EstimatorInitializator4<Eigen::MatrixXd,
-                                                           Estimator::KF<Eigen::MatrixXd,
-                                                                         stateModel,
-                                                                         measureModel,
-                                                                         noiseTransitionModel>,
-                                                           Tracker::Measurement2<Eigen::MatrixXd>>>(m4_init);
+    track4.initialization(m4_init);
     ASSERT_TRUE(track4.isInit()==true);
 
     auto track4step = track4.step(m4_step);
@@ -112,17 +117,19 @@ TEST (Track,track_base_test) {
 }
 
 TEST (Track,track_getMeasurementPredictData_test) {
-    Tracker::Track<Eigen::MatrixXd,Tracker::Measurement3<Eigen::MatrixXd>> track10;
+    Tracker::Track<Eigen::MatrixXd,
+                   Tracker::Measurement3<Eigen::MatrixXd>,
+                   Tracker::EstimatorInitializator10<Eigen::MatrixXd,
+                                                     Estimator::KF<Eigen::MatrixXd,
+                                                                   Models10::FCV<Eigen::MatrixXd>,
+                                                                   Models10::H<Eigen::MatrixXd>,
+                                                                   Models10::G<Eigen::MatrixXd>>,
+                                                     Tracker::Measurement3<Eigen::MatrixXd>>> track10;
     ASSERT_TRUE(track10.isInit()==false);
 
     Tracker::Measurement3<Eigen::MatrixXd> m10{12345.,100.,200.,300.,40.,50.,60.,7.,8.,9.,1.1,1.,1.,1.,0.,0.,0.};
 
-    track10.initialization<Tracker::EstimatorInitializator10<Eigen::MatrixXd,
-                                                             Estimator::KF<Eigen::MatrixXd,
-                                                                           Models10::FCV<Eigen::MatrixXd>,
-                                                                           Models10::H<Eigen::MatrixXd>,
-                                                                           Models10::G<Eigen::MatrixXd>>,
-                                                             Tracker::Measurement3<Eigen::MatrixXd>>>(m10);
+    track10.initialization(m10);
     ASSERT_TRUE(track10.isInit()==true);
 
     Tracker::Measurement3<Eigen::MatrixXd> m10_step1{12345.+6.,110.,210.,310.,41.,51.,61.,0.,0.,0.,0.0,0.,0.,0.,0.,0.,0.};

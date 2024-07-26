@@ -53,14 +53,43 @@ struct FCT
 {
     M operator()(const M& x,double T)
     {
-        double w = x(static_cast<int>(POSITION_X::W));
-        if(w==0)
+        long double w = x(static_cast<int>(POSITION_X::W));
+        if(w==0.)
             w=Utils::eps();
 
-        double S = std::sin(w*T);
-        double C = std::cos(w*T);
-        double TS = S/w;
-        double TC = (1-C)/w;
+        long double S = std::sin(w*T);
+        long double C = std::cos(w*T);
+        long double TS = S/w;
+        long double TC = (1.-C)/w;
+
+        M F(10,10);
+        F << 1., TS, 0., 0.,-TC, 0., 0., 0., 0., 0.,
+             0.,  C, 0., 0., -S, 0., 0., 0., 0., 0.,
+             0., 0., 1., 0., 0., 0., 0., 0., 0., 0.,
+             0., TC, 0., 1., TS, 0., 0., 0., 0., 0.,
+             0.,  S, 0., 0.,  C, 0., 0., 0., 0., 0.,
+             0., 0., 0., 0., 0., 1., 0., 0., 0., 0.,
+             0., 0., 0., 0., 0., 0., 1., T , 0., 0.,
+             0., 0., 0., 0., 0., 0., 0., 1., 0., 0.,
+             0., 0., 0., 0., 0., 0., 0., 0., 1., 0.,
+             0., 0., 0., 0., 0., 0., 0., 0., 0., 1.;
+        return F*x;
+    }
+};
+//-----------------------------------------------------------------
+template <class M>
+struct FCT_deg
+{
+    M operator()(const M& x,double T)
+    {
+        long double w = x(static_cast<int>(POSITION_X::W));
+        if(w==0.)
+            w=Utils::eps();
+
+        long double S = std::sin(Utils::deg2rad(w)*T);
+        long double C = std::cos(Utils::deg2rad(w)*T);
+        long double TS = S/w;
+        long double TC = (1.-C)/w;
 
         M F(10,10);
         F << 1., TS, 0., 0.,-TC, 0., 0., 0., 0., 0.,
@@ -83,7 +112,7 @@ struct FCTv
     M operator()(const M& x,double T)
     {
         double w = x(static_cast<int>(POSITION_X::W));
-        if(w==0)
+        if(w==0.)
             w=Utils::eps();
 
         double S = std::sin(w*T);
@@ -100,66 +129,6 @@ struct FCTv
              0., 0., 0., 0., 0., 1., 0., 0., 0., 0.,
              0., TC, 0., 0., 0., 0., 1., TS, 0., 0.,
              0.,  S, 0., 0., 0., 0., 0.,  C, 0., 0.,
-             0., 0., 0., 0., 0., 0., 0., 0., 1., 0.,
-             0., 0., 0., 0., 0., 0., 0., 0., 0., 1.;
-        return F*x;
-    }
-};
-//-----------------------------------------------------------------
-template <class M>
-struct FCT_deg
-{
-    M operator()(const M& x,double T)
-    {
-        double w = x(static_cast<int>(POSITION_X::W));//grad
-        w = w*(M_PI/180.);
-        if(w==0)
-            w=Utils::eps();
-
-        double S = std::sin(w*T);
-        double C = std::cos(w*T);
-        double TS = S/w;
-        double TC = (1-C)/w;
-
-        M F(10,10);
-        F << 1., TS, 0., 0.,-TC, 0., 0., 0., 0., 0.,
-             0.,  C, 0., 0., -S, 0., 0., 0., 0., 0.,
-             0., 0., 1., 0., 0., 0., 0., 0., 0., 0.,
-             0., TC, 0., 1., TS, 0., 0., 0., 0., 0.,
-             0.,  S, 0., 0.,  C, 0., 0., 0., 0., 0.,
-             0., 0., 0., 0., 0., 1., 0., 0., 0., 0.,
-             0., 0., 0., 0., 0., 0., 1., T , 0., 0.,
-             0., 0., 0., 0., 0., 0., 0., 1., 0., 0.,
-             0., 0., 0., 0., 0., 0., 0., 0., 1., 0.,
-             0., 0., 0., 0., 0., 0., 0., 0., 0., 1.;
-
-        return F*x;
-    }
-};
-//-----------------------------------------------------------------
-template <class M>
-struct FCT_deg2//#TEMP
-{
-    M operator()(const M& x,double T)
-    {
-        double w = x(static_cast<int>(POSITION_X::W));//grad
-        if(w==0)
-            w=Utils::eps();
-
-        double S = std::sin((M_PI/180.)*w*T);
-        double C = std::cos((M_PI/180.)*w*T);
-        double TS = S/w;
-        double TC = (1-C)/w;
-
-        M F(10,10);
-        F << 1., TS, 0., 0.,-TC, 0., 0., 0., 0., 0.,
-             0.,  C, 0., 0., -S, 0., 0., 0., 0., 0.,
-             0., 0., 1., 0., 0., 0., 0., 0., 0., 0.,
-             0., TC, 0., 1., TS, 0., 0., 0., 0., 0.,
-             0.,  S, 0., 0.,  C, 0., 0., 0., 0., 0.,
-             0., 0., 0., 0., 0., 1., 0., 0., 0., 0.,
-             0., 0., 0., 0., 0., 0., 1., T , 0., 0.,
-             0., 0., 0., 0., 0., 0., 0., 1., 0., 0.,
              0., 0., 0., 0., 0., 0., 0., 0., 1., 0.,
              0., 0., 0., 0., 0., 0., 0., 0., 0., 1.;
         return F*x;
@@ -250,7 +219,7 @@ struct FCT_Jacobian
         double w = x(static_cast<int>(POSITION_X::W));
         double t = T;
 
-        if(w==0)
+        if(w==0.)
             w=Utils::eps();
 
         M J(10,10);
@@ -260,12 +229,12 @@ struct FCT_Jacobian
         J(0,1) = std::sin(w*t)/w;
         J(0,2) = 0.;
         J(0,3) = 0.;
-        J(0,4) = (std::cos(w*t)-1)/w;
+        J(0,4) = (std::cos(w*t)-1.)/w;
         J(0,5) = 0.;
         J(0,6) = 0.;
         J(0,7) = 0.;
         J(0,8) = 0.;
-        J(0,9) = (t*vx*std::cos(w*t)/w) - (t*vy*std::sin(w*t)/w) - (vx*std::sin(w*t)/std::pow(w,2)) - (vy*(std::cos(w*t)-1)/std::pow(w,2));
+        J(0,9) = (t*vx*std::cos(w*t)/w) - (t*vy*std::sin(w*t)/w) - (vx*std::sin(w*t)/std::pow(w,2)) - (vy*(std::cos(w*t)-1.)/std::pow(w,2));
 
         J(1,0) = 0.;
         J(1,1) = std::cos(w*t);
@@ -298,7 +267,7 @@ struct FCT_Jacobian
         J(3,6) = 0.;
         J(3,7) = 0.;
         J(3,8) = 0.;
-        J(3,9) = (t*vx*std::sin(w*t)/w) + (t*vy*std::cos(w*t)/w) - (vx*(1-std::cos(w*t))/std::pow(w,2)) - (vy*std::sin(w*t)/std::pow(w,2));
+        J(3,9) = (t*vx*std::sin(w*t)/w) + (t*vy*std::cos(w*t)/w) - (vx*(1.-std::cos(w*t))/std::pow(w,2)) - (vy*std::sin(w*t)/std::pow(w,2));
 
         J(4,0) = 0.;
         J(4,1) = std::sin(w*t);
@@ -371,6 +340,136 @@ struct FCT_Jacobian
 };
 //-----------------------------------------------------------------
 template <class M>
+struct FCT_deg_Jacobian
+{
+    M operator()(const M& x,double T)
+    {
+        double vx = x(static_cast<int>(POSITION_X::VX));
+        double vy = x(static_cast<int>(POSITION_X::VY));
+        double w = x(static_cast<int>(POSITION_X::W));
+        double t = T;
+
+        if(w==0.)
+            w=Utils::eps();
+
+        M J(10,10);
+        J.setZero();
+
+        J(0,0) = 1.;
+        J(0,1) = std::sin(Utils::deg2rad(w)*t)/w;
+        J(0,2) = 0.;
+        J(0,3) = 0.;
+        J(0,4) = (std::cos(Utils::deg2rad(w)*t)-1.)/w;
+        J(0,5) = 0.;
+        J(0,6) = 0.;
+        J(0,7) = 0.;
+        J(0,8) = 0.;
+        J(0,9) = (t*vx*std::cos(Utils::deg2rad(w)*t)/w) - (t*vy*std::sin(Utils::deg2rad(w)*t)/w) - (vx*std::sin(Utils::deg2rad(w)*t)/std::pow(w,2)) - (vy*(std::cos(Utils::deg2rad(w)*t)-1.)/std::pow(w,2));
+
+        J(1,0) = 0.;
+        J(1,1) = std::cos(Utils::deg2rad(w)*t);
+        J(1,2) = 0.;
+        J(1,3) = 0.;
+        J(1,4) = -std::sin(Utils::deg2rad(w)*t);
+        J(1,5) = 0.;
+        J(1,6) = 0.;
+        J(1,7) = 0.;
+        J(1,8) = 0.;
+        J(1,9) = -t*vx*std::sin(Utils::deg2rad(w)*t) - t*vy*std::cos(Utils::deg2rad(w)*t);
+
+        J(2,0) = 0.;
+        J(2,1) = 0.;
+        J(2,2) = 1.;
+        J(2,3) = 0.;
+        J(2,4) = 0.;
+        J(2,5) = 0.;
+        J(2,6) = 0.;
+        J(2,7) = 0.;
+        J(2,8) = 0.;
+        J(2,9) = 0.;
+
+        J(3,0) = 0.;
+        J(3,1) = (1-std::cos(Utils::deg2rad(w)*t))/w;
+        J(3,2) = 0.;
+        J(3,3) = 1.;
+        J(3,4) = std::sin(Utils::deg2rad(w)*t)/w;
+        J(3,5) = 0.;
+        J(3,6) = 0.;
+        J(3,7) = 0.;
+        J(3,8) = 0.;
+        J(3,9) = (t*vx*std::sin(Utils::deg2rad(w)*t)/w) + (t*vy*std::cos(Utils::deg2rad(w)*t)/w) - (vx*(1.-std::cos(Utils::deg2rad(w)*t))/std::pow(w,2)) - (vy*std::sin(Utils::deg2rad(w)*t)/std::pow(w,2));
+
+        J(4,0) = 0.;
+        J(4,1) = std::sin(Utils::deg2rad(w)*t);
+        J(4,2) = 0.;
+        J(4,3) = 0.;
+        J(4,4) = std::cos(Utils::deg2rad(w)*t);
+        J(4,5) = 0.;
+        J(4,6) = 0.;
+        J(4,7) = 0.;
+        J(4,8) = 0.;
+        J(4,9) = t*vx*std::cos(Utils::deg2rad(w)*t) - t*vy*std::sin(Utils::deg2rad(w)*t);
+
+        J(5,0) = 0.;
+        J(5,1) = 0.;
+        J(5,2) = 0.;
+        J(5,3) = 0.;
+        J(5,4) = 0.;
+        J(5,5) = 1.;
+        J(5,6) = 0.;
+        J(5,7) = 0.;
+        J(5,8) = 0.;
+        J(5,9) = 0.;
+
+        J(6,0) = 0.;
+        J(6,1) = 0.;
+        J(6,2) = 0.;
+        J(6,3) = 0.;
+        J(6,4) = 0.;
+        J(6,5) = 0.;
+        J(6,6) = 1.;
+        J(6,7) = t ;
+        J(6,8) = 0.;
+        J(6,9) = 0.;
+
+        J(7,0) = 0.;
+        J(7,1) = 0.;
+        J(7,2) = 0.;
+        J(7,3) = 0.;
+        J(7,4) = 0.;
+        J(7,5) = 0.;
+        J(7,6) = 0.;
+        J(7,7) = 1.;
+        J(7,8) = 0.;
+        J(7,9) = 0.;
+
+        J(8,0) = 0.;
+        J(8,1) = 0.;
+        J(8,2) = 0.;
+        J(8,3) = 0.;
+        J(8,4) = 0.;
+        J(8,5) = 0.;
+        J(8,6) = 0.;
+        J(8,7) = 0.;
+        J(8,8) = 1.;
+        J(8,9) = 0.;
+
+        J(9,0) = 0.;
+        J(9,1) = 0.;
+        J(9,2) = 0.;
+        J(9,3) = 0.;
+        J(9,4) = 0.;
+        J(9,5) = 0.;
+        J(9,6) = 0.;
+        J(9,7) = 0.;
+        J(9,8) = 0.;
+        J(9,9) = 1.;
+
+        return J;
+    }
+};
+//-----------------------------------------------------------------
+template <class M>
 struct FCTv_Jacobian
 {
     M operator()(const M& x,double T)
@@ -380,7 +479,7 @@ struct FCTv_Jacobian
         double w = x(static_cast<int>(POSITION_X::W));
         double t = T;
 
-        if(w==0)
+        if(w==0.)
             w=Utils::eps();
 
         M J(10,10);
@@ -473,270 +572,6 @@ struct FCTv_Jacobian
         J(7,7) = std::cos(w*t);
         J(7,8) = 0.;
         J(7,9) = t*vx*std::cos(w*t) - t*vz*std::sin(w*t);
-
-        J(8,0) = 0.;
-        J(8,1) = 0.;
-        J(8,2) = 0.;
-        J(8,3) = 0.;
-        J(8,4) = 0.;
-        J(8,5) = 0.;
-        J(8,6) = 0.;
-        J(8,7) = 0.;
-        J(8,8) = 1.;
-        J(8,9) = 0.;
-
-        J(9,0) = 0.;
-        J(9,1) = 0.;
-        J(9,2) = 0.;
-        J(9,3) = 0.;
-        J(9,4) = 0.;
-        J(9,5) = 0.;
-        J(9,6) = 0.;
-        J(9,7) = 0.;
-        J(9,8) = 0.;
-        J(9,9) = 1.;
-
-        return J;
-    }
-};
-//-----------------------------------------------------------------
-template <class M>
-struct FCT_deg_Jacobian
-{
-    M operator()(const M& x,double T)
-    {
-        double vx = x(static_cast<int>(POSITION_X::VX));
-        double vy = x(static_cast<int>(POSITION_X::VY));
-        double w = x(static_cast<int>(POSITION_X::W));
-        //std::cout << "(0)w(J): " << w << std::endl;
-        w = w*(M_PI/180.);
-        //std::cout << "(1)w(J): " << w << std::endl;
-        double t = T;
-
-        if(w==0)
-            w=Utils::eps();
-        //std::cout << "(2)w(J): " << w << std::endl;
-
-        M J(10,10);
-        J.setZero();
-
-        J(0,0) = 1.;
-        J(0,1) = std::sin(w*t)/w;
-        J(0,2) = 0.;
-        J(0,3) = 0.;
-        J(0,4) = (std::cos(w*t)-1)/w;
-        J(0,5) = 0.;
-        J(0,6) = 0.;
-        J(0,7) = 0.;
-        J(0,8) = 0.;
-        J(0,9) = (t*vx*std::cos(w*t)/w) - (t*vy*std::sin(w*t)/w) - (vx*std::sin(w*t)/std::pow(w,2)) - (vy*(std::cos(w*t)-1)/std::pow(w,2));
-
-        J(1,0) = 0.;
-        J(1,1) = std::cos(w*t);
-        J(1,2) = 0.;
-        J(1,3) = 0.;
-        J(1,4) = -std::sin(w*t);
-        J(1,5) = 0.;
-        J(1,6) = 0.;
-        J(1,7) = 0.;
-        J(1,8) = 0.;
-        J(1,9) = -t*vx*std::sin(w*t) - t*vy*std::cos(w*t);
-
-        J(2,0) = 0.;
-        J(2,1) = 0.;
-        J(2,2) = 1.;
-        J(2,3) = 0.;
-        J(2,4) = 0.;
-        J(2,5) = 0.;
-        J(2,6) = 0.;
-        J(2,7) = 0.;
-        J(2,8) = 0.;
-        J(2,9) = 0.;
-
-        J(3,0) = 0.;
-        J(3,1) = (1-std::cos(w*t))/w;
-        J(3,2) = 0.;
-        J(3,3) = 1.;
-        J(3,4) = std::sin(w*t)/w;
-        J(3,5) = 0.;
-        J(3,6) = 0.;
-        J(3,7) = 0.;
-        J(3,8) = 0.;
-        J(3,9) = (t*vx*std::sin(w*t)/w) + (t*vy*std::cos(w*t)/w) - (vx*(1-std::cos(w*t))/std::pow(w,2)) - (vy*std::sin(w*t)/std::pow(w,2));
-
-        J(4,0) = 0.;
-        J(4,1) = std::sin(w*t);
-        J(4,2) = 0.;
-        J(4,3) = 0.;
-        J(4,4) = std::cos(w*t);
-        J(4,5) = 0.;
-        J(4,6) = 0.;
-        J(4,7) = 0.;
-        J(4,8) = 0.;
-        J(4,9) = t*vx*std::cos(w*t) - t*vy*std::sin(w*t);
-
-        J(5,0) = 0.;
-        J(5,1) = 0.;
-        J(5,2) = 0.;
-        J(5,3) = 0.;
-        J(5,4) = 0.;
-        J(5,5) = 1.;
-        J(5,6) = 0.;
-        J(5,7) = 0.;
-        J(5,8) = 0.;
-        J(5,9) = 0.;
-
-        J(6,0) = 0.;
-        J(6,1) = 0.;
-        J(6,2) = 0.;
-        J(6,3) = 0.;
-        J(6,4) = 0.;
-        J(6,5) = 0.;
-        J(6,6) = 1.;
-        J(6,7) = t ;
-        J(6,8) = 0.;
-        J(6,9) = 0.;
-
-        J(7,0) = 0.;
-        J(7,1) = 0.;
-        J(7,2) = 0.;
-        J(7,3) = 0.;
-        J(7,4) = 0.;
-        J(7,5) = 0.;
-        J(7,6) = 0.;
-        J(7,7) = 1.;
-        J(7,8) = 0.;
-        J(7,9) = 0.;
-
-        J(8,0) = 0.;
-        J(8,1) = 0.;
-        J(8,2) = 0.;
-        J(8,3) = 0.;
-        J(8,4) = 0.;
-        J(8,5) = 0.;
-        J(8,6) = 0.;
-        J(8,7) = 0.;
-        J(8,8) = 1.;
-        J(8,9) = 0.;
-
-        J(9,0) = 0.;
-        J(9,1) = 0.;
-        J(9,2) = 0.;
-        J(9,3) = 0.;
-        J(9,4) = 0.;
-        J(9,5) = 0.;
-        J(9,6) = 0.;
-        J(9,7) = 0.;
-        J(9,8) = 0.;
-        J(9,9) = 1.;
-
-        return J;
-    }
-};
-//-----------------------------------------------------------------
-template <class M>
-struct FCT_deg2_Jacobian//#TEMP
-{
-    M operator()(const M& x,double T)
-    {
-        double vx = x(static_cast<int>(POSITION_X::VX));
-        double vy = x(static_cast<int>(POSITION_X::VY));
-        double w = x(static_cast<int>(POSITION_X::W));
-        double t = T;
-
-        if(w==0)
-            w=Utils::eps();
-
-        M J(10,10);
-        J.setZero();
-
-        J(0,0) = 1.;
-        J(0,1) = std::sin((M_PI/180.)*w*t)/w;
-        J(0,2) = 0.;
-        J(0,3) = 0.;
-        J(0,4) = (std::cos((M_PI/180.)*w*t)-1)/w;
-        J(0,5) = 0.;
-        J(0,6) = 0.;
-        J(0,7) = 0.;
-        J(0,8) = 0.;
-        J(0,9) = (t*vx*std::cos((M_PI/180.)*w*t)/w) - (t*vy*std::sin((M_PI/180.)*w*t)/w) - (vx*std::sin((M_PI/180.)*w*t)/std::pow(w,2)) - (vy*(std::cos((M_PI/180.)*w*t)-1)/std::pow(w,2));
-
-        J(1,0) = 0.;
-        J(1,1) = std::cos((M_PI/180.)*w*t);
-        J(1,2) = 0.;
-        J(1,3) = 0.;
-        J(1,4) = -std::sin((M_PI/180.)*w*t);
-        J(1,5) = 0.;
-        J(1,6) = 0.;
-        J(1,7) = 0.;
-        J(1,8) = 0.;
-        J(1,9) = -t*vx*std::sin((M_PI/180.)*w*t) - t*vy*std::cos((M_PI/180.)*w*t);
-
-        J(2,0) = 0.;
-        J(2,1) = 0.;
-        J(2,2) = 1.;
-        J(2,3) = 0.;
-        J(2,4) = 0.;
-        J(2,5) = 0.;
-        J(2,6) = 0.;
-        J(2,7) = 0.;
-        J(2,8) = 0.;
-        J(2,9) = 0.;
-
-        J(3,0) = 0.;
-        J(3,1) = (1-std::cos((M_PI/180.)*w*t))/w;
-        J(3,2) = 0.;
-        J(3,3) = 1.;
-        J(3,4) = std::sin((M_PI/180.)*w*t)/w;
-        J(3,5) = 0.;
-        J(3,6) = 0.;
-        J(3,7) = 0.;
-        J(3,8) = 0.;
-        J(3,9) = (t*vx*std::sin((M_PI/180.)*w*t)/w) + (t*vy*std::cos((M_PI/180.)*w*t)/w) - (vx*(1-std::cos((M_PI/180.)*w*t))/std::pow(w,2)) - (vy*std::sin((M_PI/180.)*w*t)/std::pow(w,2));
-
-        J(4,0) = 0.;
-        J(4,1) = std::sin((M_PI/180.)*w*t);
-        J(4,2) = 0.;
-        J(4,3) = 0.;
-        J(4,4) = std::cos((M_PI/180.)*w*t);
-        J(4,5) = 0.;
-        J(4,6) = 0.;
-        J(4,7) = 0.;
-        J(4,8) = 0.;
-        J(4,9) = t*vx*std::cos((M_PI/180.)*w*t) - t*vy*std::sin((M_PI/180.)*w*t);
-
-        J(5,0) = 0.;
-        J(5,1) = 0.;
-        J(5,2) = 0.;
-        J(5,3) = 0.;
-        J(5,4) = 0.;
-        J(5,5) = 1.;
-        J(5,6) = 0.;
-        J(5,7) = 0.;
-        J(5,8) = 0.;
-        J(5,9) = 0.;
-
-        J(6,0) = 0.;
-        J(6,1) = 0.;
-        J(6,2) = 0.;
-        J(6,3) = 0.;
-        J(6,4) = 0.;
-        J(6,5) = 0.;
-        J(6,6) = 1.;
-        J(6,7) = t ;
-        J(6,8) = 0.;
-        J(6,9) = 0.;
-
-        J(7,0) = 0.;
-        J(7,1) = 0.;
-        J(7,2) = 0.;
-        J(7,3) = 0.;
-        J(7,4) = 0.;
-        J(7,5) = 0.;
-        J(7,6) = 0.;
-        J(7,7) = 1.;
-        J(7,8) = 0.;
-        J(7,9) = 0.;
 
         J(8,0) = 0.;
         J(8,1) = 0.;

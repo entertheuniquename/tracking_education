@@ -15,7 +15,7 @@ public:
                     double dt)
     {
         xp = A(x,dt) + B*u;
-        Pp = JA(xp,dt)*P*Utils::transpose(JA(xp,dt)) + G*Q*Utils::transpose(G);
+        Pp = JA(x,dt)*P*Utils::transpose(JA(x,dt)) + G*Q*Utils::transpose(G);
         Pp = (Pp + Utils::transpose(Pp))/2.;
     }
 
