@@ -17,7 +17,7 @@ public:
         double std_proc_x = 1.;//#TODO - в инит-файл?
         double std_proc_y = 1.;//#TODO - в инит-файл?
         double std_proc_z = 1.;//#TODO - в инит-файл?
-        double std_proc_w = 0.000001;//#TODO - в инит-файл?
+        double std_proc_w = 0.01;//#TODO - в инит-файл?
 
         M startState(10,1);
         startState << m.x(),m.vx(),m.ax(),m.y(),m.vy(),m.ay(),m.z(),m.vz(),m.az(),m.w();
@@ -137,7 +137,7 @@ public:
     M getState(){return estimator->getState();}
     M getCovariance(){return estimator->getCovariance();}
     M getMeasurementPredict(){return estimator->getMeasurementPredict();}
-    std::pair<M,M> getMeasurementPredictData(const double& dt){return estimator->getMeasurementPredictData(dt);}//#TODO
+    std::pair<M,M> getMeasurementPredictData(double dt){return estimator->getMeasurementPredictData(dt);}//#TODO
     M getCovarianceOfMeasurementPredict(){return estimator->getCovarianceOfMeasurementPredict();}
     bool isInit(){return is_init;}
     double getTimePoint(){return timepoint;}

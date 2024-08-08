@@ -189,7 +189,7 @@ public:
     M getStatePredict()const override{return state_predict;}
     M getCovariancePredict()const override{return covariance_predict;}
     M getMeasurementPredict()const override{return measurement_predict;}
-    std::pair<M,M> getMeasurementPredictData(const double& dt)const override{return std::make_pair(M(),M());/*#ZAGL*/}
+    std::pair<M,M> getMeasurementPredictData(double dt)const override{return std::make_pair(M(),M());/*#ZAGL*/}
     M getCovarianceOfMeasurementPredict()const override{return covariance_of_measurement_predict;}
     bool setState(M& state)override{state = state;return true;}
     bool setCovariance(M& covariance)override{covariance = covariance;return true;}

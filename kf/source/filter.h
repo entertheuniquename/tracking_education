@@ -13,7 +13,7 @@ public:
     virtual M getStatePredict() const=0;
     virtual M getCovariancePredict() const=0;
     virtual M getMeasurementPredict() const=0;
-    virtual std::pair<M,M> getMeasurementPredictData(const double& dt) const=0;
+    virtual std::pair<M,M> getMeasurementPredictData(double dt) const=0;
     virtual M getCovarianceOfMeasurementPredict() const=0;
     bool virtual setState(M& in)=0;
     bool virtual setCovariance(M& in)=0;
