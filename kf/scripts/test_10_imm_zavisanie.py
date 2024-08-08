@@ -13,7 +13,7 @@ import stand_10_zavisanie as stand
 
 T = 6.
 process_var = 1.
-process_var_w = 0.000000001
+process_var_w = 0.0002
 meas_std = 300.
 velo_std = 30.
 acc_std = 3.

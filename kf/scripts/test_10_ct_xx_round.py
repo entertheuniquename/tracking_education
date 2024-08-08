@@ -30,11 +30,6 @@ G = e.BindG_10
 
 Q = G(T)@Q0@G(T).T
 
-print("Q0")
-print(Q0)
-print("Q")
-print(Q)
-
 x0_2g = np.array([400000., 200., 0., 0., 0., 0., 0., 0., 0., 0.])
 x0_2g = x0_2g[:, np.newaxis]
 

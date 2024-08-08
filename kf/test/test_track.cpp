@@ -133,9 +133,7 @@ TEST (Track,track_getMeasurementPredictData_test) {
     ASSERT_TRUE(track10.isInit()==true);
 
     Tracker::Measurement3<Eigen::MatrixXd> m10_step1{12345.+6.,110.,210.,310.,41.,51.,61.,0.,0.,0.,0.0,0.,0.,0.,0.,0.,0.};
-
     auto data0 = track10.getMeasurementPredictData(m10_step1.timepoint()-m10.timepoint());
-
     Eigen::MatrixXd zp0 = data0.first;
     Eigen::MatrixXd Se0 = data0.second;
     auto data_step = track10.step(m10_step1);

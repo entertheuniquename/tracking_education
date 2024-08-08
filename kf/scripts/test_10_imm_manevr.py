@@ -13,11 +13,11 @@ import stand_10_manevr as stand
 
 T = 0.2
 process_var = 1.
-process_var_w = 0.000000001
+process_var_w = 0.001
 meas_std = 300.
 velo_std = 30.
 acc_std = 3.
-w_std = 0.441
+w_std = 0.392
 
 Rp = np.diag([pow(meas_std,2), pow(meas_std,2), pow(meas_std,2)])
 Rv = np.diag([pow(velo_std,2), pow(velo_std,2), pow(velo_std,2)])

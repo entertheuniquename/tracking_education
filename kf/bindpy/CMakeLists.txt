@@ -5,6 +5,7 @@ pybind11_add_module(estimator
         bind_kf.cpp
         bind_ekf.cpp
         bind_imm.cpp
+        bind_tracker_prototype.cpp
         bind_models.cpp
         bindings.cpp
 )
