@@ -32,11 +32,26 @@ struct ExtendedKalmanFilterMath
                        )
     {
         Prediction ans;
-        std::pair<M, M> predMatrix = jacobianMatrices_analitic_CT(Qs, x, f, df, p...);
+
+        //#CAUSE
+        std::pair<M, M> predMatrix = jacobianConstTurn(x, p...);
+        //std::pair<M, M> predMatrix = jacobianMatrices_analitic_CT(Qs, x, f, df, p...);
+        //~
+
+        //#CAUSE
+        M Qsqrt = predMatrix.second * Qs;
+        //
+        //~
+
         ans.x = f(x, p...);
-        //ans.x = predMatrix.second*x;//#TEMP
-        ans.S = Utils::qrFactor_A(predMatrix.second, S, predMatrix.first);
+
+        //#CAUSE
+        ans.S = Utils::qrFactor_A(predMatrix.first, S, Qsqrt);
+        //ans.S = Utils::qrFactor_A(predMatrix.second, S, predMatrix.first);
+        //~
+
         ans.dFdx = predMatrix.second;
+
         return ans;
     }
 
@@ -80,30 +95,6 @@ private:
         return jacobian;
     }
 
-    template<class TypeFuncStateTransition,
-             class ...TypeParam>
-    M numericJacobianAdditive02(TypeFuncStateTransition func,
-                              const M& x,
-                              TypeParam ...p)
-    {
-        double relativeStep = sqrt(Utils::eps());
-        double delta = relativeStep;
-        M z = func(x, p...);
-        size_t n = Utils::length(x);
-        size_t m = Utils::length(z);
-        M jacobian = Utils::zeros(m, n);
-        for (size_t j=0; j<n; ++j)
-        {
-            M imvec = z;
-            auto epsilon = std::max(delta, delta*std::abs(imvec(j)));
-            imvec(j) = imvec(j) + epsilon;
-            M imz = func(imvec, 0.00001);
-            M deltaz = imz-z;
-            jacobian.col(j) = deltaz / epsilon;
-        }
-        return jacobian;
-    }
-
     template<class TypeFuncTransition,
              class TypeFuncTransitionJacobian,
              class ...TypeParam>
@@ -127,145 +118,100 @@ private:
         return std::make_pair(Ps, J);
     }
 
-    template<class TypeFuncStateTransition,
-             class ...TypeParam>
-    std::pair<M, M> jacobianMatrices02(const M& Ps, const M& x,
-                 TypeFuncStateTransition f,
-                 std::nullptr_t df,
-                 TypeParam ...p)
-    {
-        M J = numericJacobianAdditive02(f, x, p...);
-        return std::make_pair(Ps, J);
-    }
+    //#CAUSE
+    std::pair<M, M> jacobianConstTurn(const M& state,
+                                      double dt) {
 
-    double GT(double t){return t;}
-    template<class TypeFuncStateTransition,
-             class ...TypeParam>
-    std::pair<M, M> jacobianMatrices_analitic_CT(const M& Ps, const M& xx,
-                 TypeFuncStateTransition f,
-                 std::nullptr_t df,
-                 TypeParam ...p)
-    {
         enum class POSITION{X=0,VX=1,Y=2,VY=3,Z=4,VZ=5,W=6};
-        double x = xx(static_cast<int>(POSITION::X));
-        double vx = xx(static_cast<int>(POSITION::VX));
-        double y = xx(static_cast<int>(POSITION::Y));
-        double vy = xx(static_cast<int>(POSITION::VY));
-        double z = xx(static_cast<int>(POSITION::Z));
-        double vz = xx(static_cast<int>(POSITION::VZ));
-        double w = xx(static_cast<int>(POSITION::W));
-        double t = GT(p...);
 
-        if(w==0)
-            w=Utils::eps();
 
-        //std::cout << "jacobianMatrices_analitic_CT::t: " << t << std::endl;
+        size_t px  =size_t(POSITION::X ),
+               pvx =size_t(POSITION::VX),
+               py  =size_t(POSITION::Y ),
+               pvy =size_t(POSITION::VY),
+               po  =size_t(POSITION::W ),
+               pz  =size_t(POSITION::Z ),
+               pvz =size_t(POSITION::VZ);
 
-        M J(7,7);
-        J.setZero();
+        double dt2 = dt * dt / 2.;
 
-        double J00 = 1.;
-        double J01 = sin(w*t)/w;
-        double J02 = 0.;
-        double J03 = (cos(w*t)-1)/w;
-        double J04 = 0.;
-        double J05 = 0.;
-        double J06 = (t*vx*cos(w*t)/w) - (t*vy*sin(w*t)/w) - (vx*sin(w*t)/pow(w,2)) - (vy*(cos(w*t)-1)/pow(w,2));
+        double omega = Utils::deg2rad(state(po));
+        double eps = 4*std::numeric_limits<double>::epsilon();
 
-        double J10 = 0.;
-        double J11 = cos(w*t);
-        double J12 = 0.;
-        double J13 = -sin(w*t);
-        double J14 = 0.;
-        double J15 = 0.;
-        double J16 = -t*vx*sin(w*t) - t*vy*cos(w*t);
+        int K = 7;
 
-        double J20 = 0.;
-        double J21 = (1-cos(w*t))/w;
-        double J22 = 1.;
-        double J23 = sin(w*t)/w;
-        double J24 = 0.;
-        double J25 = 0.;
-        double J26 = (t*vx*sin(w*t)/w) + (t*vy*cos(w*t)/w) - (vx*(1-cos(w*t))/pow(w,2)) - (vy*sin(w*t)/pow(w,2));
+        M jac = Utils::zeros(K, K);
 
-        double J30 = 0.;
-        double J31 = sin(w*t);
-        double J32 = 0.;
-        double J33 = cos(w*t);
-        double J34 = 0.;
-        double J35 = 0.;
-        double J36 = t*vx*cos(w*t) - t*vy*sin(w*t);
+        if (std::abs(omega) > std::sqrt(eps)) {
 
-        double J40 = 0.;
-        double J41 = 0.;
-        double J42 = 0.;
-        double J43 = 0.;
-        double J44 = 1.;
-        double J45 = t;
-        double J46 = 0.;
+            double WT  = omega * dt;
+            double CWT = cos(WT);
+            double SWT = sin(WT);
 
-        double J50 = 0.;
-        double J51 = 0.;
-        double J52 = 0.;
-        double J53 = 0.;
-        double J54 = 0.;
-        double J55 = 1.;
-        double J56 = 0.;
+            jac(px, px) = 1.;
 
-        double J60 = 0.;
-        double J61 = 0.;
-        double J62 = 0.;
-        double J63 = 0.;
-        double J64 = 0.;
-        double J65 = 0.;
-        double J66 = 1.;
+            jac(px,  pvx) = SWT / omega;
+            jac(pvx, pvx) = CWT;
+            jac(py,  pvx) = (1. - CWT) / omega;
+            jac(pvy, pvx) = SWT;
 
-        J << J00, J01, J02, J03, J04, J05, J06,
-             J10, J11, J12, J13, J14, J15, J16,
-             J20, J21, J22, J23, J24, J25, J26,
-             J30, J31, J32, J33, J34, J35, J36,
-             J40, J41, J42, J43, J44, J45, J46,
-             J50, J51, J52, J53, J54, J55, J56,
-             J60, J61, J62, J63, J64, J65, J66;
+            jac(py, py) = 1.;
 
-        return std::make_pair(Ps, J);
+            jac(px,  pvy) = -(1. - CWT) / omega;
+            jac(pvx, pvy) = -SWT;
+            jac(py,  pvy) = SWT / omega;
+            jac(pvy, pvy) = CWT;
+
+            jac(px,  po) = Utils::deg2rad(((WT*CWT - SWT) * state(pvx) + (1 - CWT - WT*SWT) * state(pvy)) / std::pow(omega, 2.));
+            jac(pvx, po) = Utils::deg2rad((-state(pvx) * SWT - state(pvy) * CWT) * dt);
+            jac(py,  po) = Utils::deg2rad((WT*(state(pvx) * SWT + state(pvy) * CWT) - (state(pvx) * (1-CWT) + state(pvy) * SWT)) / std::pow(omega, 2.));
+            jac(pvy, po) = Utils::deg2rad((state(pvx) * CWT - state(pvy) * SWT) * dt);
+
+            jac(po, po) = 1.;
+
+        } else {
+
+            jac(px, px ) = 1.;
+            jac(px, pvx) = dt;
+            jac(pvx,pvx) = 1.;
+
+            jac(py, py ) = 1.;
+            jac(py, pvy) = dt;
+            jac(pvy,pvy) = 1.;
+
+            jac(po, po) = 1.;
+
+            jac(px, po) = Utils::deg2rad(-state(pvy) * dt2);
+            jac(pvx,po) = Utils::deg2rad(-state(pvy) * dt );
+            jac(py, po) = Utils::deg2rad( state(pvx) * dt2);
+            jac(pvy,po) = Utils::deg2rad( state(pvx) * dt );
+        }
+
+        jac(pz,  pz ) = 1.;
+        jac(pz,  pvz) = dt;
+        jac(pvz, pvz) = 1.;
+
+
+        int L = 4;
+        M dfdw = Utils::zeros(K, L);
+
+        size_t pnx  = 0,
+               pny  = 1,
+               pnz  = 2,
+               pno  = 3;
+
+        dfdw(px , pnx) = dt2;
+        dfdw(pvx, pnx) = dt;
+        dfdw(py , pny) = dt2;
+        dfdw(pvy, pny) = dt;
+        dfdw(pz , pnz) = dt2;
+        dfdw(pvz, pnz) = dt;
+        dfdw(po , pno) = dt;
+
+        return std::make_pair(jac, dfdw);
     }
-
-    template<class TypeFuncStateTransition,
-             class ...TypeParam>
-    std::pair<M, M> jacobianMatrices3A_Analitic_Predict(const M& Ps, const M& x,
-                 TypeFuncStateTransition f,
-                 std::nullptr_t df,
-                 TypeParam ...p)
-    {
-        M J = {{1,0.2,0,0,0,0},
-               {0,1,0,0,0,0},
-               {0,0,1,0.2,0,0},
-               {0,0,0,1,0,0},
-               {0,0,0,0,1,0.2},
-               {0,0,0,0,0,1}};
-        return std::make_pair(Ps, J);
-    }
-
-    template<class TypeFuncStateTransition,
-             class ...TypeParam>
-    std::pair<M, M> jacobianMatrices3A_Analitic_Correct(const M& Ps, const M& x,
-                 TypeFuncStateTransition f,
-                 std::nullptr_t df,
-                 TypeParam ...p)
-    {
-        double X = x[0];
-        double Y = x[2];
-        double Z = x[4];
-        double XYZ = x[0]*x[0]+x[2]*x[2]+x[4]*x[4];
-        double sqrtXYZ = std::sqrt(XYZ);
-        double XY = x[0]*x[0]+x[2]*x[2];
-        double sqrtXY = std::sqrt(XY);
-        M J = {{-X*Z/(sqrtXY*XYZ),0,-Y*Z/(sqrtXY*XYZ),0,sqrtXY/XYZ,0},
-               {-Y/XY,0,X/XY,0,0,0},
-               {X/sqrtXYZ,0,Y/sqrtXYZ,0,Z/sqrtXYZ,0}};
-        return std::make_pair(Ps, J);
-    }
+    //
+    //~
 
     struct MeasurementJacobianAndCovariance
     {
@@ -292,27 +238,6 @@ private:
         ans.zEstimated = h(x, p...);
         ans.Pxy = (S*Utils::transpose(S))*Utils::transpose(ans.dHdx);
         ans.Sy = Utils::qrFactor_A(ans.dHdx, S, ans.Rsqrt);
-        return ans;
-    }
-
-    template<class TypeMeasurementTransition,
-             class TypeFuncTransitionJacobian,
-             class ...TypeParam>
-    MeasurementJacobianAndCovariance getMeasurementJacobianAndCovariance3AA(
-                                        const M& Rs, const M& x, const M& S,
-                                        TypeMeasurementTransition h,
-                                        TypeFuncTransitionJacobian dh,
-                                        TypeParam ...p)
-    {
-        MeasurementJacobianAndCovariance ans;
-        std::pair<M, M> measMatrix = jacobianMatrices3A_Analitic_Correct(Rs, x, h, dh, p...);
-
-        ans.Rsqrt = measMatrix.first;
-        ans.dHdx = measMatrix.second;
-        ans.zEstimated = h(x, p...);
-        ans.Pxy = (S*trans(S))*trans(ans.dHdx);
-        ans.Sy = Utils::qrFactor_A(ans.dHdx, S, ans.Rsqrt);
-
         return ans;
     }
 
@@ -359,7 +284,6 @@ public:
 
     EKFE& SetStateCovariance(const Eigen::MatrixXd& StateCovariance)
     {
-        ////std::cout << "SetStateCovariance" << std::endl;
         CHECK_SYMETRIC_POSITIVE(Utils::EA(StateCovariance));
         sqrtStateCovariance = Utils::cholPSD_A(StateCovariance);
         return *this;
@@ -367,7 +291,6 @@ public:
 
     EKFE& SetProcessNoise(const Eigen::MatrixXd& ProcessNoise)
     {
-        ////std::cout << "SetProcessNoise" << std::endl;
         CHECK_SYMETRIC_POSITIVE(Utils::EA(ProcessNoise));
         sqrtProcessNoise = Utils::cholPSD_A(ProcessNoise);
         return *this;
@@ -375,7 +298,6 @@ public:
 
     EKFE& SetMeasurementNoise(const Eigen::MatrixXd& MeasurementNoise)
     {
-        ////std::cout << "SetMeasurementNoise" << std::endl;
         CHECK_SYMETRIC_POSITIVE(Utils::EA(MeasurementNoise));
         sqrtMeasurementNoise = Utils::cholPSD_A(MeasurementNoise);
         return *this;
@@ -425,8 +347,7 @@ public:
                                                         sqrtStateCovariance,
                                                         MM(),
                                                         nullptr,
-                                                        measurement//#TODO! - сделать через параметр
-                                                        /*param...*/);//#TODO!
+                                                        measurement);
         State = corr.first;
         sqrtStateCovariance = corr.second;
         return std::make_pair(State, GetStateCovariance());
