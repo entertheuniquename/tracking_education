@@ -1,281 +1,243 @@
 #pragma once
 
-#include "kf_eigen3.h"
-#include "ekf_eigen3.h"
-#include <map>
-#include <string>
-#include <memory>
-#include <map>
-#include "models.h"
+#include "filter.h"
+#include "measurement.h"
+#include "utils.h"
+#include <cmath>
 
-template<class M=Eigen::MatrixXd>
-struct Measurement
+namespace Tracker
 {
-    double timepoint;
-    M point;
-    //M measurement_noise;
-};
 
-template<class M, class StateModel, class MeasureModel>
-struct EstimatorInitKFE
+template<class M, class EstimatorType, class MeasurementType, class ...Types>
+class EstimatorInitializator10
 {
-    M R; M Q0; M Q; M P0; M x0;
-    M SM;
-    M MM;
-    M GM;
-
-    std::unique_ptr<Estimator::KFE<M,StateModel,MeasureModel>> make_estimator()
+public:
+    Estimator::Filter<M>* operator()(MeasurementType m, Types ...args)
     {
-        return std::make_unique<Estimator::KFE<M,StateModel,MeasureModel>>(x0,P0,SM,Q0,GM,MM,R);
-    }
+        double std_proc_x = 1.;//#TODO - в инит-файл?
+        double std_proc_y = 1.;//#TODO - в инит-файл?
+        double std_proc_z = 1.;//#TODO - в инит-файл?
+        double std_proc_w = 0.01;//#TODO - в инит-файл?
 
-    EstimatorInitKFE(const Measurement<M>& measurement)
-    {
-        //Здесь пока задаются все общие параметры:
-        //-------------------------------------------------------------------------
-        double process_var = 1.;//откуда?
-        double meas_var_decart = 300.;//откуда?
-        double velo_var_decart = 30.;//откуда?
-        //double meas_var_polar_ae = 0.0001;//откуда?
-        //double meas_var_polar_r = 1.0;//откуда?
-        double dt = 6.0;//откуда?
-        //-------------------------------------------------------------------------
+        double meas_std = 300;//#TEMP //#TODO - вынести куда-то!!!
+        double velo_std = 30;//#TEMP //#TODO - вынести куда-то!!!
+        double acc_std = 3;//#TEMP //#TODO - вынести куда-то!!!
+        double w_std = 0.392;//#TEMP //#TODO - вынести куда-то!!!
 
-        StateModel sm;
-        MeasureModel mm;
+        M startState(10,1);
+        startState << m.x(),m.vx(),m.ax(),m.y(),m.vy(),m.ay(),m.z(),m.vz(),m.az(),m.w();
 
-        M point = measurement.point;
+        //std::cout << "imm.initializator.startState " << Utils::transpose(startState) << std::endl;
 
-        Q0.resize(3,3);
-        Q0 << process_var,          0.,          0.,
-                       0., process_var,          0.,
-                       0.,          0., process_var;
+        M measNoise(3,3);
+        measNoise << std::pow(/*m.std_meas_x()*/meas_std,2), 0., 0.,//#TEMP
+                     0., std::pow(/*m.std_meas_y()*/meas_std,2), 0.,//#TEMP
+                     0., 0., std::pow(/*m.std_meas_z()*/meas_std,2);//#TEMP
+        M measVeloNoise(3,3);
+        measVeloNoise << std::pow(/*m.std_meas_velo_x(),*/velo_std,2), 0., 0.,//#TEMP
+                         0., std::pow(/*m.std_meas_velo_y()*/velo_std,2), 0.,//#TEMP
+                         0., 0., std::pow(/*m.std_meas_velo_z()*/velo_std,2);//#TEMP
+        M measAccNoise(3,3);
+        measAccNoise << std::pow(/*m.std_meas_velo_x(),*/acc_std,2), 0., 0.,//#TEMP
+                         0., std::pow(/*m.std_meas_velo_y()*/acc_std,2), 0.,//#TEMP
+                         0., 0., std::pow(/*m.std_meas_velo_z()*/acc_std,2);//#TEMP
+        M processNoise(4,4);
+        processNoise << std::pow(std_proc_x,2), 0., 0., 0.,
+                        0., std::pow(std_proc_y,2), 0., 0.,
+                        0., 0., std::pow(std_proc_z,2), 0.,
+                        0., 0., 0., std::pow(std_proc_w,2);
+        M Hp(3,10);
+        Hp << 1., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+              0., 0., 0., 1., 0., 0., 0., 0., 0., 0.,
+              0., 0., 0., 0., 0., 0., 1., 0., 0., 0.;
+        M Hv(3,10);
+        Hv << 0., 1., 0., 0., 0., 0., 0., 0., 0., 0.,
+              0., 0., 0., 0., 1., 0., 0., 0., 0., 0.,
+              0., 0., 0., 0., 0., 0., 0., 1., 0., 0.;
+        M Ha(3,10);
+        Ha << 0., 0., 1., 0., 0., 0., 0., 0., 0., 0.,
+              0., 0., 0., 0., 0., 1., 0., 0., 0., 0.,
+              0., 0., 0., 0., 0., 0., 0., 0., 1., 0.;
+        M Hw(1,10);
+        Hw << 0., 0., 0., 0., 0., 0., 0., 0., 0., 1.;
+        M startCovariance  = Utils::transpose(Hp)*measNoise*Hp + Utils::transpose(Hv)*measVeloNoise*Hv + Utils::transpose(Ha)*measAccNoise*Ha + Utils::transpose(Hw)*std::pow(w_std,2)*Hw;
 
-        Models::GModel_XvXYvYZvZ<M> gm;
+        //std::cout << "startState" << std::endl << startState << std::endl;
+        //std::cout << "startCovariance" << std::endl << startCovariance << std::endl;
+        //std::cout << "processNoise" << std::endl << processNoise << std::endl;
+        //std::cout << "measNoise" << std::endl << measNoise << std::endl;
 
-        GM = gm(dt);
-        SM = sm(dt);
-        MM = mm();
-
-        M G = GM;
-        Q = G*Q0*Utils::transpose(G);
-
-        R.resize(3,3);
-        R << meas_var_decart*meas_var_decart,                              0.,                               0.,
-                                          0., meas_var_decart*meas_var_decart,                               0.,
-                                          0.,                              0.,  meas_var_decart*meas_var_decart;
-
-        M Rvel(3,3);
-        Rvel << velo_var_decart*velo_var_decart,                              0.,                               0.,
-                                             0., velo_var_decart*velo_var_decart,                               0.,
-                                             0.,                              0.,  velo_var_decart*velo_var_decart;
-        M Hp(3,6);
-        Hp << 1., 0., 0., 0., 0., 0.,
-              0., 0., 1., 0., 0., 0.,
-              0., 0., 0., 0., 1., 0.;
-        M Hv(3,6);
-        Hv << 0., 1., 0., 0., 0., 0.,
-              0., 0., 0., 1., 0., 0.,
-              0., 0., 0., 0., 0., 1.;
-
-         x0 = Utils::transpose(Hp)*point;
-
-         P0  = Utils::transpose(Hp)*R*Hp + Utils::transpose(Hv)*Rvel*Hv;
+        return new EstimatorType(startState,startCovariance,processNoise,measNoise,args...);
     }
 };
 
-template<class M, class StateModel, class MeasureModel>
-struct EstimatorInitEKFE
+template<class M, class EstimatorType, class MeasurementType, class ...Types>
+class EstimatorInitializator10_IMM3
 {
-    M R; M Q; M P0; M x0;
-    StateModel SM;
-    MeasureModel MM;
-
-    std::unique_ptr<Estimator::EKFE<Eigen::MatrixXd,StateModel,MeasureModel>> make_estimator()
+public:
+    Estimator::Filter<M>* operator()(MeasurementType m, Types ...args)
     {
-        return std::make_unique<Estimator::EKFE<Eigen::MatrixXd,StateModel,MeasureModel>>(x0,P0,Q,R);
-    }
+        Eigen::MatrixXd mu(1,3);
+        mu << 0.3333, 0.3333, 0.3333;
+        Eigen::MatrixXd trans(3,3);
+        trans << 0.95, 0.025, 0.025,
+                 0.025, 0.95, 0.025,
+                 0.025, 0.025, 0.95;
 
-    EstimatorInitEKFE(const Measurement<M>& measurement)
-    {
-        //Здесь пока задаются все общие параметры:
-        //-------------------------------------------------------------------------
-        double process_var = 1.;//откуда?
-        double meas_var_decart = 300.;//откуда?
-        double velo_var_decart = 30.;//откуда?
-        double meas_var_polar_ae = 0.0001;//откуда?
-        double meas_var_polar_r = 1.0;//откуда?
-        double dt = 6.0;//откуда?
-        //-------------------------------------------------------------------------
-
-        Models::GModel_XvXYvYZvZ<Eigen::MatrixXd> gm;
-        StateModel sm;
-        MeasureModel mm;
-
-        M point = measurement.point;
-
-        M Q0(3,3);
-        Q0 << process_var,          0.,          0.,
-                       0., process_var,          0.,
-                       0.,          0., process_var;
+        double meas_std = 300;//#TEMP //#TODO - вынести куда-то!!!
+        double velo_std = 30;//#TEMP //#TODO - вынести куда-то!!!
+        double acc_std = 3;//#TEMP //#TODO - вынести куда-то!!!
+        double w_std = 0.392;//#TEMP //#TODO - вынести куда-то!!!
 
 
+        double std_proc_x = 1.;//#TODO - в инит-файл?
+        double std_proc_y = 1.;//#TODO - в инит-файл?
+        double std_proc_z = 1.;//#TODO - в инит-файл?
+        double std_proc_w = 0.01;//#TODO - в инит-файл?
 
+        M startState(10,1);
+        startState << m.x(),m.vx(),m.ax(),m.y(),m.vy(),m.ay(),m.z(),m.vz(),m.az(),m.w();
 
-        M G = gm(dt);
-        Q = G*Q0*Utils::transpose(G);
+        //std::cout << "imm.initializator.startState " << Utils::transpose(startState) << std::endl;
 
-        R.resize(3,3);
-        R << meas_var_polar_ae,                0.,                0.,
-                            0., meas_var_polar_ae,                0.,
-                            0.,                0.,  meas_var_polar_r;
+        M measNoise(3,3);
+        measNoise << std::pow(/*m.std_meas_x()*/meas_std,2), 0., 0.,//#TEMP
+                     0., std::pow(/*m.std_meas_y()*/meas_std,2), 0.,//#TEMP
+                     0., 0., std::pow(/*m.std_meas_z()*/meas_std,2);//#TEMP
+        M measVeloNoise(3,3);
+        measVeloNoise << std::pow(/*m.std_meas_velo_x(),*/velo_std,2), 0., 0.,//#TEMP
+                         0., std::pow(/*m.std_meas_velo_y()*/velo_std,2), 0.,//#TEMP
+                         0., 0., std::pow(/*m.std_meas_velo_z()*/velo_std,2);//#TEMP
+        M measAccNoise(3,3);
+        measAccNoise << std::pow(/*m.std_meas_velo_x(),*/acc_std,2), 0., 0.,//#TEMP
+                         0., std::pow(/*m.std_meas_velo_y()*/acc_std,2), 0.,//#TEMP
+                         0., 0., std::pow(/*m.std_meas_velo_z()*/acc_std,2);//#TEMP
+        M processNoise(4,4);
+        processNoise << std::pow(std_proc_x,2), 0., 0., 0.,
+                        0., std::pow(std_proc_y,2), 0., 0.,
+                        0., 0., std::pow(std_proc_z,2), 0.,
+                        0., 0., 0., std::pow(std_proc_w,2);
+        M Hp(3,10);
+        Hp << 1., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+              0., 0., 0., 1., 0., 0., 0., 0., 0., 0.,
+              0., 0., 0., 0., 0., 0., 1., 0., 0., 0.;
+        M Hv(3,10);
+        Hv << 0., 1., 0., 0., 0., 0., 0., 0., 0., 0.,
+              0., 0., 0., 0., 1., 0., 0., 0., 0., 0.,
+              0., 0., 0., 0., 0., 0., 0., 1., 0., 0.;
+        M Ha(3,10);
+        Ha << 0., 0., 1., 0., 0., 0., 0., 0., 0., 0.,
+              0., 0., 0., 0., 0., 1., 0., 0., 0., 0.,
+              0., 0., 0., 0., 0., 0., 0., 0., 1., 0.;
+        M Hw(1,10);
+        Hw << 0., 0., 0., 0., 0., 0., 0., 0., 0., 1.;
+        M startCovariance  = Utils::transpose(Hp)*measNoise*Hp + Utils::transpose(Hv)*measVeloNoise*Hv + Utils::transpose(Ha)*measAccNoise*Ha + Utils::transpose(Hw)*std::pow(w_std,2)*Hw;
 
-        M Hp(3,6);
-        Hp << 1., 0., 0., 0., 0., 0.,
-              0., 0., 1., 0., 0., 0.,
-              0., 0., 0., 0., 1., 0.;
+        //std::cout << "startState" << std::endl << startState << std::endl;
+        //std::cout << "startCovariance" << std::endl << startCovariance << std::endl;
+        //std::cout << "processNoise" << std::endl << processNoise << std::endl;
+        //std::cout << "measNoise" << std::endl << measNoise << std::endl;
 
-        x0 = sph2cart(point);
-        x0 = Utils::transpose(Hp)*x0;
-
-        P0  = make_cartcov(point, R);
-
-
-    }
-
-    M rot_z(double a)
-    {
-        a = Utils::deg2rad(a);
-        M R(3,3);
-        R.setZero();
-        double ca = std::cos(a);
-        double sa = std::sin(a);
-        R(0,0) = ca;
-        R(0,1) = -sa;
-        R(1,0) = sa;
-        R(1,1) = ca;
-        return R;
-    }
-
-    M rot_y(double a)
-    {
-        a = Utils::deg2rad(a);
-        M R(3,3);
-        R.setZero();
-        double ca = std::cos(a);
-        double sa = std::sin(a);
-        R(0,0) = ca;
-        R(0,2) = sa;
-        R(2,0) = -sa;
-        R(2,2) = ca;
-        return R;
-    }
-
-    M sph2cart(M polar)
-    {
-        M decart(polar.rows(),polar.cols());
-        decart.setZero();
-        for(int i=0;i<polar.cols();i++)
-        {
-            decart(0, i) = polar(2, i) * std::cos(polar(1, i)) * std::cos(polar(0, i));
-            decart(1, i) = polar(2, i) * std::sin(polar(1, i)) * std::cos(polar(0, i));
-            decart(2, i) = polar(2, i) * std::sin(polar(0, i));
-        }
-        return decart;
-    }
-
-    std::pair<M, M> sph2cartcov(M sphCov, double az, double el, double r)
-    {
-        int pr = 2;
-        int pa = 0;
-        int pe = 1;
-        int pvr= 3;
-
-        double rngSig = std::sqrt(sphCov(pr, pr));
-        double azSig  = std::sqrt(sphCov(pa, pa));
-        double elSig  = std::sqrt(sphCov(pe, pe));
-
-
-        M Rpos(3,3);
-        Rpos << rngSig*rngSig,                                                                                                            0.,                                                  0.,
-                           0., (r*std::cos(Utils::deg2rad(el))*Utils::deg2rad(azSig))*(r*std::cos(Utils::deg2rad(el))*Utils::deg2rad(azSig)),                                                  0.,
-                           0.,                                                                                                            0., (r*Utils::deg2rad(elSig))*(r*Utils::deg2rad(elSig));
-        M rot = rot_z(az)*Utils::transpose(rot_y(el));
-        M posCov = rot*Rpos*Utils::transpose(rot);
-        M velCov;
-        if(sphCov.rows()==4 && sphCov.cols()==4)
-        {
-            double rrSig = std::sqrt(sphCov(pvr, pvr));
-            double crossVelSig = 10.;
-            M Rvel(3,3);
-            Rvel << rrSig*rrSig,                      0.,                      0.,
-                             0., crossVelSig*crossVelSig,                      0.,
-                             0.,                      0., crossVelSig*crossVelSig;
-            velCov = rot*Rvel*Utils::transpose(rot);
-        }
-        else
-        {
-            velCov.resize(3,3);
-            velCov << 100.,   0.,   0.,
-                        0., 100.,   0.,
-                        0.,   0., 100.;
-        }
-
-        return std::make_pair(posCov, velCov);
-    }
-
-    M make_cartcov(M meas, M covMeas)
-    {
-        double r  = meas(2,0);
-        double az = Utils::rad2deg(meas(1,0));
-        double el = Utils::rad2deg(meas(0,0));
-        M sphCov(3,3);
-        sphCov << covMeas(0,0),           0.,           0.,
-                            0., covMeas(2,2),           0.,
-                            0.,           0., covMeas(1,1);
-        std::pair<M, M> x = sph2cartcov(sphCov, az, el, r);
-        M Hp(3,6);
-        Hp << 1., 0., 0., 0., 0., 0.,
-              0., 0., 1., 0., 0., 0.,
-              0., 0., 0., 0., 1., 0.;
-        M Hv(3,6);
-        Hv << 0., 1., 0., 0., 0., 0.,
-              0., 0., 0., 1., 0., 0.,
-              0., 0., 0., 0., 0., 1.;
-        return Utils::transpose(Hp)*x.first*Hp + Utils::transpose(Hv)*x.second*Hv;
+        return new EstimatorType(mu,trans,startState,startCovariance,processNoise,measNoise);
     }
 };
 
-template<class M, class EstimatorType, class EstimatorInit, class SM, class MM>
+template<class M, class EstimatorType, class MeasurementType, class ...Types>
+class EstimatorInitializator4
+{
+public:
+    Estimator::Filter<M>* operator()(const MeasurementType& m, Types ...args)
+    {
+        double std_proc_x = 1.;
+        double std_proc_y = 1.;
+
+        M startState(4,1);//#TODO - сделать не в лоб
+        startState << m.x(),m.vx(),m.y(),m.vy();//#TODO - сделать не в лоб
+        M measNoise(2,2);
+        measNoise << std::pow(m.std_meas_x(),2), 0.,
+                     0., std::pow(m.std_meas_y(),2);
+        M measVeloNoise(2,2);
+        measVeloNoise << std::pow(m.std_meas_velo_x(),2), 0.,
+                         0., std::pow(m.std_meas_velo_y(),2);
+        M processNoise(2,2);
+        processNoise << std::pow(std_proc_x,2), 0.,
+                        0., std::pow(std_proc_y,2);
+        M Hp(2,4);
+        Hp << 1., 0., 0., 0.,
+              0., 0., 1., 0.;
+        M Hv(2,4);
+        Hv << 0., 1., 0., 0.,
+              0., 0., 0., 1.;
+        M startCovariance  = Utils::transpose(Hp)*measNoise*Hp + Utils::transpose(Hv)*measVeloNoise*Hv;
+
+        return new EstimatorType(startState,startCovariance,processNoise,measNoise, args...);
+    }
+};
+
+template<class M, class MeasurementType, class EstimatorInitType>
 class Track
 {
 private:
-    std::unique_ptr<EstimatorType> estimator;
+    Estimator::Filter<M>* estimator;
+    //double price;//#TODO
     double timepoint;
+    bool is_init;
 public:
-    Track(const Measurement<M>& m)
-    {
-        EstimatorInit ei(m);
-        estimator = ei.make_estimator();
-        timepoint = m.timepoint;
-    }
-    M step(const Measurement<M>& m)
-    {
-        double dt = m.timepoint - timepoint;
-        timepoint = m.timepoint;
-        M res_state;
-        res_state = estimator->predict(dt).first;
-        res_state = estimator->correct(m.point).first;
+    long long unsigned int id;
 
-        return res_state;
+    Track():
+        timepoint(0.),
+        estimator(nullptr),
+        //price(0.),//#TODO
+        is_init(false)
+    {}
+
+    template<class EstimatorInitializator=EstimatorInitType, class ...Types>
+    void initialization(MeasurementType m, Types ...args)
+    {
+        estimator=EstimatorInitializator()(m,args...);
+        timepoint=m.timepoint();
+        is_init=true;
     }
-    M step(double t)
+
+    std::pair<M,M> step(const MeasurementType& m)
+    {
+        double dt = m.timepoint() - timepoint;
+        timepoint = m.timepoint();
+
+        M res_state;
+        M res_covariance;
+
+        auto p = estimator->predict(dt);
+        res_state = p.first;
+        res_covariance = p.second;
+
+        auto c = estimator->correct(m.get());
+        res_state = c.first;
+        res_covariance = c.second;
+
+        return std::make_pair(res_state,res_covariance);
+    }
+    std::pair<M,M> step(double t)
     {
         double dt = t - timepoint;
         timepoint = t;
         M res_state;
-        res_state = estimator->predict(dt).first;
+        M res_covariance;
 
-        return res_state;
+        auto p = estimator->predict(dt);
+        res_state = p.first;
+        res_covariance = p.second;
+
+        return std::make_pair(res_state,res_covariance);
     }
+    M getState(){return estimator->getState();}
+    M getCovariance(){return estimator->getCovariance();}
+    M getMeasurementPredict(){return estimator->getMeasurementPredict();}
+    std::pair<M,M> getMeasurementPredictData(double dt){return estimator->getMeasurementPredictData(dt);}//#TODO
+    M getCovarianceOfMeasurementPredict(){return estimator->getCovarianceOfMeasurementPredict();}
+    bool isInit(){return is_init;}
+    double getTimePoint(){return timepoint;}
+    //double getPrice()const{return price;}//#TODO
 };
+}

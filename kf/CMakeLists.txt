@@ -13,6 +13,8 @@ set(CMAKE_CXX_COMPILER /usr/bin/g++)
 set(CMAKE_C_COMPILER /usr/bin/gcc)
 set(CMAKE_CXX_FLAGS "-std=c++17 -pthread -fPIC")
 
+add_definitions(-DROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
 message("kf[2]: установка флагов")
 
 include_directories("/usr/include/eigen3")
@@ -36,6 +38,46 @@ else(pybind11_FOUND)
     message("PYBIND11 is NOT found:")
 endif(pybind11_FOUND)
 
+find_package(GTest REQUIRED)
+
+if (GTest_FOUND)
+    message(STATUS "---------------------")
+    message(STATUS "Google Test is found!")
+    message(STATUS "---------------------")
+    enable_testing()
+else(GTest_FOUND)
+    message(STATUS "-------------------------")
+    message(STATUS "Google Test is not found!")
+    message(STATUS "-------------------------")
+endif(GTest_FOUND)
+
+find_package(Boost REQUIRED)
+
+if (Boost_FOUND)
+    message(STATUS "---------------------")
+    message(STATUS "Boost is found!")
+    message(STATUS "---------------------")
+    enable_testing()
+else(Boost_FOUND)
+    message(STATUS "-------------------------")
+    message(STATUS "Boost is not found!")
+    message(STATUS "-------------------------")
+endif(Boost_FOUND)
+
+find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+
+if (Python3_FOUND)
+    message(STATUS "---------------------")
+    message(STATUS "Python3 is found!")
+    message(STATUS "---------------------")
+    enable_testing()
+else(Python3_FOUND)
+    message(STATUS "-------------------------")
+    message(STATUS "Python3 is not found!")
+    message(STATUS "-------------------------")
+endif(Python3_FOUND)
+
+include_directories("/usr/include/gtest")
 include_directories("/home/ivan/project/3rd_party/armadillo-12.8.2")
 
 find_package(Eigen3 REQUIRED)
@@ -49,6 +91,7 @@ set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/source)
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 set(TEST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test)
 set(BIN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bin)
+set(SCRIPTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/scripts)
 
 message("kf[5]: установка переменных путей")
 
