@@ -58,15 +58,22 @@ public:
         tp(t),
         //estimators{std::make_unique<Filter<M>>(eee)...}, //#TODO - smart ptr
         estimators{new Estimators(eee)...},
-        lenx0(estimators.at(0)->getState().rows())
-    {}
+        lenx0(estimators.at(0)->getState().rows())//,
+        //state(estimators.at(0)->getState()),//#TODO - как правильно сделать?
+        //covariance(estimators.at(0)->getCovariance())//#TODO - как правильно сделать?
+    {
+        state = estimators.at(0)->getState();
+        covariance = estimators.at(0)->getCovariance();
+    }
 
     IMM(M m, M t, M x0, M P0, M Q0, M R):
         mu(m),
         tp(t),
         //estimators{std::make_unique<Filter<M>>(Estimators(x0,P0,Q0,R))...}, //#TODO - smart ptr
         estimators{new Estimators(x0,P0,Q0,R)...},
-        lenx0(estimators.at(0)->getState().rows())
+        lenx0(estimators.at(0)->getState().rows()),
+        state(x0),
+        covariance(P0)
     {}
 
     IMM(const IMM& imm):
@@ -82,7 +89,7 @@ public:
         estimators{new Estimators(&imm.estimators)...}
     {}
 
-    ~IMM(){for(auto e : estimators){/*std::cout << "imm.filter[deleted]" << std::endl;*/delete e;}estimators.clear();}
+    ~IMM(){for(auto e : estimators){delete e;}estimators.clear();}
 
     std::vector<std::pair<M,M>> mixed_states_and_covariances()
     {
@@ -120,6 +127,7 @@ public:
 
     M models_probability_recalculation(M& z)
     {
+
         M mx = IMMMath<M>::mixing_probability(length,mu,tp);
 
         std::vector<std::pair<M,M>>zs;
@@ -156,7 +164,7 @@ public:
         return mu;
     }
 
-    std::pair<M,M> combine_state_and_covariance()//#TODO - проверить на безопасность!
+    std::pair<M,M> combine_state_and_covariance() const//#TODO - проверить на безопасность!
     {
         std::vector<std::pair<M,M>> xp;
 
@@ -170,6 +178,29 @@ public:
             cs+=mu(j)*xp.at(j).first;
 
         M cc(lenx0,lenx0);
+        cc.setZero();
+
+        for(int j=0;j<length;j++)
+            cc+=mu(j)*(xp.at(j).second+(xp.at(j).first-cs)*Utils::transpose(xp.at(j).first-cs));
+
+
+        return std::make_pair(cs,cc);
+    }
+
+    std::pair<M,M> combine_state_and_covariance_measurement_predict(double dt) const
+    {
+        std::vector<std::pair<M,M>> xp;
+
+        for(auto filter : estimators)
+            xp.push_back(filter->getMeasurementPredictData(dt));
+
+        M cs(3,1);//#TEMP - высчитывать размер автоматом
+        cs.setZero();
+
+        for(int j=0;j<length;j++)
+            cs+=mu(j)*xp.at(j).first;
+
+        M cc(3,3);//#TEMP - высчитывать размер автоматом
         cc.setZero();
 
         for(int j=0;j<length;j++)
@@ -216,17 +247,62 @@ public:
     }
 
 public:
+    M getProcessNoise()const override{return M();}//#ZAGL
+    M getProcessNoise(double dt)const override{return M();}//#ZAGL
+    M getMeasurementNoise()const override{return M();}//#ZAGL
+
     M getState()const override{return state;}
     M getCovariance()const override{return covariance;}
     M getStatePredict()const override{return state_predict;}
     M getCovariancePredict()const override{return covariance_predict;}
     M getMeasurementPredict()const override{return M();}//#ZAGL //#TODO - сделать правильный возврат
-    std::pair<M,M> getMeasurementPredictData(double dt)const override{return std::make_pair(M(),M());/*#ZAGL*/}
+    std::pair<M,M> getMeasurementPredictData(double dt)const override
+    {
+        return combine_state_and_covariance_measurement_predict(dt);
+    }
     M getCovarianceOfMeasurementPredict()const override{return M();}//#ZAGL //#TODO - сделать правильный возврат
     bool setState(M& state_in)override{state = state_in;return true;}
     bool setCovariance(M& covariance_in)override{covariance = covariance_in;return true;}
 
+
+    int estimators_amount(){return estimators.size();}
+    std::vector<M> estimators_states()
+    {
+        std::vector<M> states;
+        for(int i=0;i<estimators.size();i++)
+            states.push_back(estimators.at(i)->getState());
+        return states;
+    }
+    std::vector<M> estimators_covariances()
+    {
+        std::vector<M> covariances;
+        for(int i=0;i<estimators.size();i++)
+            covariances.push_back(estimators.at(i)->getCovariance());
+        return covariances;
+    }
+    std::vector<M> estimators_process_noises()
+    {
+        std::vector<M> noises;
+        for(int i=0;i<estimators.size();i++)
+            noises.push_back(estimators.at(i)->getProcessNoise());
+        return noises;
+    }
+    std::vector<M> estimators_process_noises(double dt)
+    {
+        std::vector<M> noises;
+        for(int i=0;i<estimators.size();i++)
+            noises.push_back(estimators.at(i)->getProcessNoise(dt));
+        return noises;
+    }
+    std::vector<M> estimators_measurement_noises()
+    {
+        std::vector<M> noises;
+        for(int i=0;i<estimators.size();i++)
+            noises.push_back(estimators.at(i)->getMeasurementNoise());
+        return noises;
+    }
     M getMU()const{return mu;}
+    M getTP()const{return tp;}
 
 };
 }

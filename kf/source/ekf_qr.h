@@ -184,6 +184,9 @@ public:
         residue(ekf_qr.residue)
     {}
 
+    M getProcessNoise()const override{return process_noise;}
+    M getMeasurementNoise()const override{return measurement_noise;}
+
     M getState()const override{return state;}
     M getCovariance()const override{return covariance;}
     M getStatePredict()const override{return state_predict;}

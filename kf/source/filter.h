@@ -8,6 +8,11 @@ template<class M>
 class Filter
 {
 public:
+    virtual M getProcessNoise() const=0;
+    virtual M getProcessNoise(double) const=0;
+    virtual M getMeasurementNoise() const=0;
+
+
     virtual M getState() const=0;
     virtual M getCovariance() const=0;
     virtual M getStatePredict() const=0;

@@ -1,10 +1,10 @@
-#include "../source/tracker_prototype.h"
+#include "../source/tracker.h"
 #include "../source/gnn.h"
 #include "../source/kf.h"
 #include "../source/models.h"
 #include <gtest/gtest.h>
 
-TEST (Tracker_prototype,tracker_base_test) {
+TEST (TrackerGNN,tracker_base_test) {
     //----------------------------------------------------------------------
     ASSERT_TRUE(true);
     //----------------------------------------------------------------------
@@ -57,7 +57,7 @@ TEST (Tracker_prototype,tracker_base_test) {
     using EstimatorInitializatorType = Tracker::EstimatorInitializator4<MatrixType,EstimatorType,MeasurementType>;
     using TrackType = Tracker::Track<MatrixType,MeasurementType,EstimatorInitializatorType>;
     //----------------------------------------------------------------------
-    Tracker::Tracker_prototype<MatrixType,
+    Tracker::TrackerGNN<MatrixType,
                                EstimatorInitializatorType,
                                EstimatorType,
                                TrackType,

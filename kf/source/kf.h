@@ -68,13 +68,16 @@ public:
         residue(kf.residue)
     {}
 
+    M getProcessNoise()const override{return process_noise;}
+    M getProcessNoise(double dt)const override{return GM()(dt)*process_noise*Utils::transpose(GM()(dt));}
+    M getMeasurementNoise()const override{return measurement_noise;}
 
     M getState()const override{return state;}
     M getCovariance()const override{return covariance;}
     M getStatePredict()const override{return state_predict;}
     M getCovariancePredict()const override{return covariance_predict;}
     M getMeasurementPredict()const override{return measurement_predict;}
-    std::pair<M,M> getMeasurementPredictData(double dt)const override/*const override*/
+    std::pair<M,M> getMeasurementPredictData(double dt)const override
     {
         M xp = SM()(state,dt);
         M Pp = Utils::transpose(SM()(Utils::transpose(SM()(covariance,dt)),dt)) + GM()(dt)*process_noise*Utils::transpose(GM()(dt));

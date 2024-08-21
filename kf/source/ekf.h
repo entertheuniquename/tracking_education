@@ -68,12 +68,24 @@ public:
         residue(ekf.residue)
     {}
 
+    M getProcessNoise()const override{return process_noise;}
+    M getMeasurementNoise()const override{return measurement_noise;}
+    M getProcessNoise(double dt)const override{return (GM()(dt)*process_noise*Utils::transpose(GM()(dt)));}
+
     M getState()const override{return state;}
     M getCovariance()const override{return covariance;}
     M getStatePredict()const override{return state_predict;}
     M getCovariancePredict()const override{return covariance_predict;}
     M getMeasurementPredict()const override{return measurement_predict;}
-    std::pair<M,M> getMeasurementPredictData(double dt)const override{return std::make_pair(M(),M());/*#ZAGL*/}
+    std::pair<M,M> getMeasurementPredictData(double dt)const override
+    {
+        M xp = SM()(state,dt);
+        M Pp = JSM()(state,dt)*covariance*Utils::transpose(JSM()(state,dt)) + GM()(dt)*process_noise*Utils::transpose(GM()(dt));
+        Pp = (Pp + Utils::transpose(Pp))/2.;
+        M zp = MM()(xp);
+        M Se = JMM()()*Pp*Utils::transpose(JMM()()) + measurement_noise;
+        return std::make_pair(zp,Se);
+    }
     M getCovarianceOfMeasurementPredict()const override{return covariance_of_measurement_predict;}
     bool setState(M& state_in)override{state = state_in;return true;}
     bool setCovariance(M& covariance_in)override{covariance = covariance_in;return true;}

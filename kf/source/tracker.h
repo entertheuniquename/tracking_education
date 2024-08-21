@@ -17,11 +17,11 @@ template<class M,
          class EstimatorType,
          class TrackType,
          class MeasurementType>
-class Tracker_prototype
+class TrackerGNN
 {
 private:
 public:
-    static const int tracks_amount = 1000;//#TODO - подобрать нужный тип!
+    static const int tracks_amount = 1000;//#TODO - подобрать нужный тип! //#TODO - зачем static?
     int current_ready_track=0;
     TrackType global_tracks[tracks_amount];
     std::vector<TrackType*> tracks;
@@ -37,11 +37,10 @@ public:
     //void updateTrack(/*...*/){}//#TODO
     //void killTrack(/*...*/){}//#TODO
 public:
-    Tracker_prototype():counter(0){}
+    TrackerGNN():counter(0){}
     std::vector<TrackType*>& step(std::vector<MeasurementType> ms,double dt)
     {
         counter++;
-        //std::cout << "     - " << counter << " -" << std::endl;
         Eigen::MatrixXd association_matrix = Association::GlobalNearestNeighbor<Eigen::MatrixXd,TrackType,MeasurementType>()(tracks,ms);
         std::vector<unsigned int> vacant_track_numbers;
         std::vector<unsigned int> vacant_measurement_numbers;
@@ -67,7 +66,6 @@ public:
             if(!b_ready)
                 vacant_track_numbers.push_back(i);
         }
-        //std::cout << "Tracker_prototype:: " << std::endl;
         //update tracks
         for(auto i : pairs)
         {
@@ -88,7 +86,6 @@ public:
             if(tracks.size()>=4){}else//#TEMP //#ZAGL
             initTrack(ms.at(vacant_measurement_numbers.at(i)));
         }
-        //std::cout << std::endl << std::endl;
         return tracks;
     }
 };

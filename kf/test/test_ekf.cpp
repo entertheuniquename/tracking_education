@@ -101,6 +101,8 @@ TEST (EKF,ekf_base_test) {
                    stateModel_Jacobian,
                    measureModel_Jacobian> ekf(x0,P0,Q0,R);
 
+    auto zS = ekf.getMeasurementPredictData(t);
+
     auto pred = ekf.predict(t);
     Eigen::MatrixXd xp1 = pred.first;
     Eigen::MatrixXd Pp1 = pred.second;
@@ -108,6 +110,7 @@ TEST (EKF,ekf_base_test) {
     auto corr = ekf.correct(z);
     Eigen::MatrixXd xc1 = corr.first;
     Eigen::MatrixXd Pc1 = corr.second;
+    Eigen::MatrixXd zp1 = ekf.getMeasurementPredict();
     Eigen::MatrixXd Sc1 = ekf.getCovarianceOfMeasurementPredict();
 
     //FROM filterpy_test_ekf.py
@@ -134,6 +137,9 @@ TEST (EKF,ekf_base_test) {
     ASSERT_TRUE(xc1.isApprox(filterpy_xc1,0.001));
     ASSERT_TRUE(Pc1.isApprox(filterpy_Pc1,0.001));
     ASSERT_TRUE(Sc1.isApprox(filterpy_Sc1,0.001));
+
+    ASSERT_TRUE(zp1.isApprox(zS.first,0.001));
+    ASSERT_TRUE(Sc1.isApprox(zS.second,0.001));
 }
 
 //TEST (EKF,ekf_ct_test) {
