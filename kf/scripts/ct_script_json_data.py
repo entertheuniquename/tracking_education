@@ -6,10 +6,16 @@ import matplotlib.pyplot as plt
 import math
 from IPython.display import display, Math, Latex
 from IPython.display import Markdown as md
+from read_json import read_file as rf
 #from arr2ltx import convert2latex, to_latex
 
 import estimator as e
 import math
+
+
+dat = rf("data 24-18-19 17_08_1724077092.json")
+
+
 
 ### Входные данные ###########################################################################################
 # Период поступления данных
@@ -20,7 +26,7 @@ process_var = 1
 process_var_w = 0.01
 
 # Ошибки измерений
-meas_std = 100
+meas_std = 200
 
 # Угловая скорость на развороте в радианах
 w2g_r_ = 0.098
@@ -84,6 +90,18 @@ X2g0r=make_true_data_round(initialState2gr, 200, T)
 X5g0r=make_true_data_round(initialState5gr, 200, T)
 X8g0r=make_true_data_round(initialState8gr, 200, T)
 
+
+X2g0r = np.array([item.true_2g for item in dat])
+X2g0r = X2g0r.T
+
+X5g0r = np.array([item.true_5g for item in dat])
+X5g0r = X5g0r.T
+
+X8g0r = np.array([item.true_8g for item in dat])
+X8g0r = X8g0r.T
+
+
+
 ### Добавление к наборам данных ошибок процесса ##############################################################
 def add_process_noise(X,Var):
     Xn = X + np.sqrt(Var) @ np.random.normal(loc=0, scale=1.0, size=(X.shape[0], X.shape[1]))
@@ -93,6 +111,16 @@ Qt = G @ Q @ G.T
 Xn2g0r = add_process_noise(X2g0r,Qt)
 Xn5g0r = add_process_noise(X5g0r,Qt)
 Xn8g0r = add_process_noise(X8g0r,Qt)
+
+Xn2g0r = np.array([item.noisy_true_2g for item in dat])
+Xn2g0r = Xn2g0r.T
+
+Xn5g0r = np.array([item.noisy_true_5g for item in dat])
+Xn5g0r = Xn5g0r.T
+
+Xn8g0r = np.array([item.noisy_true_8g for item in dat])
+Xn8g0r = Xn8g0r.T
+
 
 ### Получение из наборов данных измерений и добавление к ним шцмов ###########################################
 # Функция получения измерений
@@ -108,9 +136,21 @@ def make_meas(X, R):
     Zn = Z + np.sqrt(R) @ np.random.normal(loc=0, scale=math.sqrt(1.0), size=(Z.shape[0], Z.shape[1]))
     return Zn
 
+
+
 Zn2g0r = make_meas(Xn2g0r, R)
 Zn5g0r = make_meas(Xn5g0r, R)
 Zn8g0r = make_meas(Xn8g0r, R)
+
+Zn2g0r = np.array([item.meas_2g for item in dat])
+Zn2g0r = Zn2g0r.T
+
+Zn5g0r = np.array([item.meas_5g for item in dat])
+Zn5g0r = Zn5g0r.T
+
+Zn8g0r = np.array([item.meas_8g for item in dat])
+Zn8g0r = Zn8g0r.T
+
 
 ### Фильтрация XYZ_EKFE_CT ###################################################################################
 
