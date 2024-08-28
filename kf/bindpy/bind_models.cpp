@@ -17,6 +17,9 @@ void bind_models(py::module &m) {
     m.def("stateModel_CTx", [](Eigen::MatrixXd x,double dt){
         Models::StateModel_CT_Deg<Eigen::MatrixXd> sm;
         return sm(x,dt);});
+    m.def("stateModel_CTx_rad", [](Eigen::MatrixXd x,double dt){
+        Models::StateModel_CT<Eigen::MatrixXd> sm;
+        return sm(x,dt);});
     m.def("stateModel_CT6", [](Eigen::MatrixXd x){
         std::cout << "stateModel_CT6" << std::endl;
         Models::StateModel_CT<Eigen::MatrixXd> sm;

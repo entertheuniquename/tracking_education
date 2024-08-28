@@ -319,7 +319,6 @@ struct EstimatorInitEKFE_xyz_ct
 
     EstimatorInitEKFE_xyz_ct(const Measurement<M>& measurement)
     {
-        std::cout << "EstimatorInitEKFE_xyz_ct" << std::endl;
         //Здесь пока задаются все общие параметры:
         //-------------------------------------------------------------------------
         double dt = 6; //откуда?
