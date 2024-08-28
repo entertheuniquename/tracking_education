@@ -1,11 +1,7 @@
 message("kf[0]:")
 
-
 cmake_minimum_required(VERSION 3.14)
-#CAUSE
-project(kf_compare VERSION 1.0 LANGUAGES C CXX)
-#project(kf VERSION 1.0 LANGUAGES C CXX)
-#~
+project(kf VERSION 1.0 LANGUAGES C CXX)
 
 message("kf[1]: установка названия и версии проекта")
 
