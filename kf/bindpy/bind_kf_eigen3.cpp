@@ -34,7 +34,7 @@ public:
     }
 };
 
-void bind_kf(pybind11::module &m)
+void bind_kf_eigen3(pybind11::module &m)
 {
     py::class_<BindKFE>(m, "BindKFE")
         .def(py::init<Eigen::MatrixXd,Eigen::MatrixXd,Eigen::MatrixXd,Eigen::MatrixXd,Eigen::MatrixXd,Eigen::MatrixXd,Eigen::MatrixXd>())
