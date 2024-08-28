@@ -10,7 +10,7 @@ pybind11_add_module(estimator
 )
 
 #CAUSE
-target_link_libraries(estimator PRIVATE Eigen3::Eigen kf_compare)
+target_link_libraries(estimator PRIVATE Eigen3::Eigen kf)
 #target_link_libraries(estimator PRIVATE Eigen3::Eigen kf)
 #~
 
