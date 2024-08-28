@@ -131,12 +131,24 @@ inline Eigen::MatrixXd ComputeKalmanGain_E(Eigen::MatrixXd Sy,Eigen::MatrixXd Px
 
 inline Eigen::MatrixXd AE(arma::Mat<double> a)
 {
-    return Eigen::Map<Eigen::MatrixXd>(a.memptr(),a.n_rows,a.n_cols);
+    Eigen::MatrixXd matrix(a.n_rows, a.n_cols);
+    for (int r=0; r<a.n_rows; ++r) {
+        for (int c=0; c<a.n_cols; ++c) {
+            matrix(r,c) = a(r,c);
+        }
+    }
+    return matrix;
 }
 
 inline arma::Mat<double> EA(Eigen::MatrixXd e)
 {
-    return arma::Mat<double>(e.data(),e.rows(), e.cols(),true,false);
+    arma::mat matrix(e.rows(), e.cols());
+    for (int r=0; r<e.rows(); ++r) {
+        for (int c=0; c<e.cols(); ++c) {
+            matrix(r,c) = e(r,c);
+        }
+    }
+    return matrix;
 }
 
 //#TODO
@@ -228,7 +240,9 @@ inline Eigen::MatrixXd cholPSD_A(const Eigen::MatrixXd& A1)
     //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     arma::Mat<double> ret;
     if (!chol(ret, A)) {
-        return AE(svdPSD(A));
+        ret = svdPSD(A);
+        std::cout << ret << std::endl;
+        return AE(ret);
     }
     //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     arma::Mat<double> rett = ret.t();
@@ -342,6 +356,9 @@ inline arma::Mat<double> ComputeKalmanGain(arma::Mat<double> Sy,
 inline double ComputeAngleDifference(double a1, double a2) {
     return std::arg(std::complex<double>(cos(a1 - a2), sin(a1 - a2)));
 }
+
+
+
 
 }
 
