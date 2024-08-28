@@ -32,22 +32,12 @@ struct ExtendedKalmanFilterMath
                        )
     {
         Prediction ans;
-        std::cout << "Qs:" << std::endl << Qs << std::endl;
-        std::cout << "x:" << std::endl << x << std::endl;
-        std::cout << "S:" << std::endl << S << std::endl;
-
-
-        //std::pair<M, M> predMatrix = jacobianMatrices_analitic_CT_Deg(Qs, x, f, df, p...);
         std::pair<M, M> predMatrix = jacobianConstTurn(x, p...);
-        std::cout << "1234444444444" << std::endl;
         M Qsqrt = predMatrix.second * Qs;
         ans.x = f(x, p...);
-        std::cout << "456" << std::endl;
-
 
         ans.S = Utils::qrFactor_A(predMatrix.first, S, Qsqrt);
         ans.dFdx = predMatrix.second;
-        std::cout << "789" << std::endl;
 
         return ans;
     }
@@ -173,8 +163,6 @@ private:
         if(w==0)
             w=Utils::eps();
 
-        //std::cout << "jacobianMatrices_analitic_CT::t: " << t << std::endl;
-
         M J(7,7);
         J.setZero();
 
@@ -271,8 +259,6 @@ private:
         return std::make_pair(Qsqrt, J);
     }
 
-
-    //template <class M>
     std::pair<M, M> jacobianConstTurn(const M& state,
                                       double dt) {
 
@@ -372,8 +358,6 @@ private:
                  std::nullptr_t df,
                  TypeParam ...p)
     {
-
-        std::cout << "xx=" << xx << std::endl;
         enum class POSITION{X=0,VX=1,Y=2,VY=3,Z=4,VZ=5,W=6};
         double x = xx(static_cast<int>(POSITION::X));
         double vx = xx(static_cast<int>(POSITION::VX));
@@ -391,8 +375,6 @@ private:
 
         if(w==0)
             w=Utils::eps();
-
-        //std::cout << "jacobianMatrices_analitic_CT::t: " << t << std::endl;
 
         M J(7,7);
         J.setZero();
@@ -549,7 +531,6 @@ private:
         std::pair<M, M> measMatrix = jacobianMatrices(Rs, x, h, dh, p...);
         ans.Rsqrt = measMatrix.first;
         ans.dHdx = measMatrix.second;
-        std::cout << "dHdx=" << ans.dHdx << std::endl;
         ans.zEstimated = h(x, p...);
         ans.Pxy = (S*Utils::transpose(S))*Utils::transpose(ans.dHdx);
         ans.Sy = Utils::qrFactor_A(ans.dHdx, S, ans.Rsqrt);
@@ -613,9 +594,6 @@ public:
          Eigen::MatrixXd measureNoise):
         State(state)
     {
-        std::cout << "P0=" << std::endl
-                  << covariance << std::endl;
-
         SetStateCovariance(covariance);
         SetProcessNoise(processNoise);
         SetMeasurementNoise(measureNoise);
@@ -623,7 +601,6 @@ public:
 
     EKFE& SetStateCovariance(const Eigen::MatrixXd& StateCovariance)
     {
-        ////std::cout << "SetStateCovariance" << std::endl;
         CHECK_SYMETRIC_POSITIVE(Utils::EA(StateCovariance));
         sqrtStateCovariance = Utils::cholPSD_A(StateCovariance);
         return *this;
@@ -631,23 +608,13 @@ public:
 
     EKFE& SetProcessNoise(const Eigen::MatrixXd& ProcessNoise)
     {
-        std::cout << ProcessNoise << std::endl;
-
-        ////std::cout << "SetProcessNoise" << std::endl;
         CHECK_SYMETRIC_POSITIVE(Utils::EA(ProcessNoise));
-
-        arma::mat ProcessNoiseA = Utils::EA(ProcessNoise);
-        std::cout << ProcessNoiseA << std::endl;
-
-
         sqrtProcessNoise = Utils::cholPSD_A(ProcessNoise);
-        std::cout << sqrtProcessNoise << std::endl;
         return *this;
     }
 
     EKFE& SetMeasurementNoise(const Eigen::MatrixXd& MeasurementNoise)
     {
-        ////std::cout << "SetMeasurementNoise" << std::endl;
         CHECK_SYMETRIC_POSITIVE(Utils::EA(MeasurementNoise));
         sqrtMeasurementNoise = Utils::cholPSD_A(MeasurementNoise);
         return *this;
@@ -676,7 +643,6 @@ public:
     template <class ...TypeParam>
     std::pair<Eigen::MatrixXd, Eigen::MatrixXd> predict(double dt,TypeParam ...param)
     {
-        std::cout << "predict" << std::endl;
         auto pred = ExtendedKalmanFilterMath<>::predict(sqrtProcessNoise,
                                                         State,
                                                         sqrtStateCovariance,
@@ -692,7 +658,6 @@ public:
     std::pair<Eigen::MatrixXd, Eigen::MatrixXd> correct(const Eigen::MatrixXd& measurement,
                                                             TypeParam ...param)
     {
-        std::cout << "correct" << std::endl;
         auto corr = ExtendedKalmanFilterMath<>::correct(measurement,
                                                         sqrtMeasurementNoise,
                                                         State,
