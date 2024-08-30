@@ -3,6 +3,33 @@
 
 namespace Association
 {
+template<class M>
+double formAssociationMatrixUnit(M zp, M z, M S, double G)
+{
+    return G-(Utils::transpose(z - zp)*Utils::inverse(S)*(z - zp)).determinant();
+}
+
+template<class M>
+double formAssociationMatrixUnit_(M zp, M z, M S, double G)
+{
+    M y = z - zp;
+    double y2 = 0.;
+    for(int i=0;i<y.rows();i++)y2+=std::pow(y(i),2);
+    return G-std::sqrt(y2);
+}
+
+template<class M>
+double formAssociationMatrixUnit_forBigGate(M state, M z, double G)
+{
+    //передать namespace  в качестве аргумента шаблона???
+    //for 10 coordinates:
+    double dx = z(0) - state(0);
+    double dy = z(1) - state(4);
+    double dz = z(2) - state(7);
+    double d = std::sqrt(std::pow(dx,2)+std::pow(dy,2)+std::pow(dz,2));
+    double a = G-d;
+    return a;
+}
 
 template<class M, class TrackType, class MeasurementType>
 class GlobalNearestNeighbor
@@ -30,7 +57,8 @@ public:
             {
                 double dt = measurements.at(j).timepoint() - tracks.at(i)->getTimePoint();
                 auto zp_S = tracks.at(i)->getMeasurementPredictData(dt);
-                auto G = 50000.;//#ZAGL - //tracks.at(i)->getGate();
+                auto st = tracks.at(i)->getState();
+
                 //auto Pd = 0.;
                 //auto beta =
                 //auto G0 = 2*std::ln(Pd/((1-Pd)*std::pow((2*M_PI),m/2)*beta*std::sqrt(Utils::zp_S.determinant())));
@@ -38,8 +66,13 @@ public:
                 M S = zp_S.second;
                 M z = measurements.at(j).get();
                 M y = z - zp;
-                d2(i,j) = (Utils::transpose(y)*Utils::inverse(S)*y).determinant();
-                a(i,j) = G-d2(i,j);
+
+                auto G = tracks.at(i)->getBigGate(2000.,dt);//50000.;
+                auto G2 = tracks.at(i)->getGate(S);
+                //d2(i,j) = (Utils::transpose(y)*Utils::inverse(S)*y).determinant();
+                //a(i,j) = G-d2(i,j);
+
+                a(i,j) = formAssociationMatrixUnit_(zp,z,S,G);
             }
         }
         //std::cout << "GlobalNearestNeighbor: [result] a[" << a.rows() << "," << a.cols() << "]" << std::endl << a << std::endl;

@@ -83,7 +83,6 @@ public:
         for(int i=0;i<vacant_measurement_numbers.size();i++)
         {
             //std::cout << "NEW_TRACK: from(" << vacant_measurement_numbers.at(i) << ")" << std::endl;
-            if(tracks.size()>=4){}else//#TEMP //#ZAGL
             initTrack(ms.at(vacant_measurement_numbers.at(i)));
         }
         return tracks;

@@ -10,5 +10,5 @@ pybind11_add_module(estimator
         bindings.cpp
 )
 
-target_link_libraries(estimator PRIVATE Eigen3::Eigen kf)
+target_link_libraries(estimator PRIVATE Eigen3::Eigen tracker)
 set_target_properties(estimator PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LIBRARY_OUTPUT_DIRECTORY})

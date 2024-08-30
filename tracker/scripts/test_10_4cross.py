@@ -11,6 +11,8 @@ import estimator as e
 import math
 import stand_10_4cross as stand
 
+import random
+
 T = 6.
 process_var = 1
 process_var_w = 0.001
@@ -78,13 +80,43 @@ Zn4 = stand.make_meas(Xn4,Rp,e.BindHXX_10)
 tracker_imm = e.BindTracker_10_IMM3_XX()
 
 def step(tracker, Z1, Z2, Z3, Z4):
-    E1 = np.zeros((X1.shape[0],X1.shape[1]-1))
-    E2 = np.zeros((X2.shape[0],X2.shape[1]-1))
-    E3 = np.zeros((X3.shape[0],X3.shape[1]-1))
-    E4 = np.zeros((X4.shape[0],X4.shape[1]-1))
+    E1 = np.zeros((X1.shape[0]+1,X1.shape[1]-1))
+    E2 = np.zeros((X2.shape[0]+1,X2.shape[1]-1))
+    E3 = np.zeros((X3.shape[0]+1,X3.shape[1]-1))
+    E4 = np.zeros((X4.shape[0]+1,X4.shape[1]-1))
 
-    for i in range(Z1.shape[1]-1):
-        zs = np.array([Z1[:,i],Z2[:,i],Z3[:,i],Z4[:,i]])
+    Pd = 0.95 #probability of detection
+    #print("Pd: "+str(Pd))
+    common_est_am = Z1.shape[1]-1 #estimation amount (100%)
+    #print("common_est_am: "+str(common_est_am))
+    true_detection_est_am = int(common_est_am*Pd) #estimation amount (95%)
+    #print("true_detection_est_am: "+str(true_detection_est_am))
+    false_alarm_est_am = common_est_am - true_detection_est_am #pass amount (5%)
+    #print("false_alarm_est_am: "+str(false_alarm_est_am))
+
+    rands1 = []
+    rands2 = []
+    rands3 = []
+    rands4 = []
+
+    for r in range(false_alarm_est_am):
+        rands1.append(random.randint(0,common_est_am))
+        rands2.append(random.randint(0,common_est_am))
+        rands3.append(random.randint(0,common_est_am))
+        rands4.append(random.randint(0,common_est_am))
+
+    for i in range(common_est_am):
+        zss = []
+        am=0
+        if not i in rands1:
+            zss.append(Z1[:,i])
+        if not i in rands2:
+            zss.append(Z2[:,i])
+        if not i in rands3:
+            zss.append(Z3[:,i])
+        if not i in rands4:
+            zss.append(Z4[:,i])
+        zs = np.array(zss)
 
         ests = tracker.step(zs,T)
 
@@ -113,10 +145,10 @@ def calc_err(x1,x2,x3,x4,Q,R,amount):
 
     [est1,est2,est3,est4] = step(tracker,zn1,zn2,zn3,zn4)
 
-    err1 = est1 - xn1[:, 1:]
-    err2 = est2 - xn2[:, 1:]
-    err3 = est3 - xn3[:, 1:]
-    err4 = est4 - xn4[:, 1:]
+    err1 = est1[:-1,] - xn1[:, 1:]
+    err2 = est2[:-1,] - xn2[:, 1:]
+    err3 = est3[:-1,] - xn3[:, 1:]
+    err4 = est4[:-1,] - xn4[:, 1:]
 
     return err1, err2, err3, err4
 
@@ -141,9 +173,24 @@ def calc_std_err(x1,x2,x3,x4,Q,R,amount,num_iterations):
     var_err4 /= num_iterations
     return np.sqrt(var_err1), np.sqrt(var_err2), np.sqrt(var_err3), np.sqrt(var_err4)
 
-[std_err_1, std_err_2, std_err_3, std_err_4] = calc_std_err(X1,X2,X3,X4,Q,Rp,100,2000)
+[std_err_1, std_err_2, std_err_3, std_err_4] = calc_std_err(X1,X2,X3,X4,Q,Rp,100,20)
 #####################################################################################
 fig = plt.figure("",figsize=(21,11))
+
+def xo_points(estimates):
+    estimates_x = estimates.copy()
+    estimates_o = estimates.copy()
+    for i in range(estimates.shape[1]):
+        if(estimates[-1,i]==1):
+            estimates_x[:,i] = np.nan
+        else:
+            estimates_o[:,i] = np.nan
+    return estimates_x, estimates_o
+
+[EstIMM1_x, EstIMM1_o] = xo_points(EstIMM1)
+[EstIMM2_x, EstIMM2_o] = xo_points(EstIMM2)
+[EstIMM3_x, EstIMM3_o] = xo_points(EstIMM3)
+[EstIMM4_x, EstIMM4_o] = xo_points(EstIMM4)
 
 ax1 = fig.add_subplot(2,2,1)
 ax1.plot(Xn1[0, :], Xn1[3, :], label='true-1', linestyle='--', marker='', color='red')
@@ -155,9 +202,17 @@ ax1.plot(Zn2[0, :], Zn2[1, :], label='measurement-2', linestyle='', marker='+', 
 ax1.plot(Zn3[0, :], Zn3[1, :], label='measurement-3', linestyle='', marker='+', color='green')
 ax1.plot(Zn4[0, :], Zn4[1, :], label='measurement-4', linestyle='', marker='+', color='orange')
 ax1.plot(EstIMM1[0, 1:], EstIMM1[3, 1:], label='estimation(imm)-1', marker='', color='tomato')
+ax1.plot(EstIMM1_x[0, 1:], EstIMM1_x[3, 1:], linestyle='', marker='X', color='red')
+ax1.plot(EstIMM1_o[0, 1:], EstIMM1_o[3, 1:], linestyle='', marker='.', color='tomato')
 ax1.plot(EstIMM2[0, 1:], EstIMM2[3, 1:], label='estimation(imm)-2', marker='', color='lightblue')
+ax1.plot(EstIMM2_x[0, 1:], EstIMM2_x[3, 1:], linestyle='', marker='X', color='red')
+ax1.plot(EstIMM2_o[0, 1:], EstIMM2_o[3, 1:], linestyle='', marker='.', color='lightblue')
 ax1.plot(EstIMM3[0, 1:], EstIMM3[3, 1:], label='estimation(imm)-3', marker='', color='lime')
+ax1.plot(EstIMM3_x[0, 1:], EstIMM3_x[3, 1:], linestyle='', marker='X', color='red')
+ax1.plot(EstIMM3_o[0, 1:], EstIMM3_o[3, 1:], linestyle='', marker='.', color='lime')
 ax1.plot(EstIMM4[0, 1:], EstIMM4[3, 1:], label='estimation(imm)-4', marker='', color='yellow')
+ax1.plot(EstIMM4_x[0, 1:], EstIMM4_x[3, 1:], linestyle='', marker='X', color='red')
+ax1.plot(EstIMM4_o[0, 1:], EstIMM4_o[3, 1:], linestyle='', marker='.', color='yellow')
 ax1.set_title("IMM - Y(X)")
 ax1.set_xlabel('x,met')
 ax1.set_ylabel('y,met')

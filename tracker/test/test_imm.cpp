@@ -650,7 +650,6 @@ TEST (IMM,imm_base_test_constructor1) {
 }
 
 TEST (IMM,imm3_test) {
-    std::cout << "TEST_TEST_TEST" << std::endl;
     //----------------------------------------------------------------------
     using IMM_MatrixType = Eigen::MatrixXd;
     using IMM_F1ModelType = Models10::FCV<IMM_MatrixType>;
@@ -748,27 +747,26 @@ TEST (IMM,imm3_test) {
     Eigen::MatrixXd mu_imm = imm.getMU();
 
     //compare
-    std::cout << "* * * * * * * * * * * * * * * * * * * * * * * * * * * *" << std::endl;
-    std::cout << "x0_imm:" << std::endl << x0_imm << std::endl;
-    std::cout << "P0_imm:" << std::endl << P0_imm << std::endl;
-    std::cout << "_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _" << std::endl;
-    std::cout << "states0_imm.at(0):" << std::endl << states0_imm.at(0) << std::endl;
-    std::cout << "states0_imm.at(1):" << std::endl << states0_imm.at(1) << std::endl;
-    std::cout << "states0_imm.at(2):" << std::endl << states0_imm.at(2) << std::endl;
-    std::cout << "* * * * * * * * * * * * * * * * * * * * * * * * * * * *" << std::endl;
-    std::cout << "xp_imm:" << std::endl << xp_imm << std::endl;
-    std::cout << "Pp_imm:" << std::endl << Pp_imm << std::endl;
-    std::cout << "_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _" << std::endl;
-    std::cout << "states_p_imm.at(0):" << std::endl << states_p_imm.at(0) << std::endl;
-    std::cout << "states_p_imm.at(1):" << std::endl << states_p_imm.at(1) << std::endl;
-    std::cout << "states_p_imm.at(2):" << std::endl << states_p_imm.at(2) << std::endl;
-    std::cout << "* * * * * * * * * * * * * * * * * * * * * * * * * * * *" << std::endl;
-    std::cout << "xc_imm:" << std::endl << xc_imm << std::endl;
-    std::cout << "Pc_imm:" << std::endl << Pc_imm << std::endl;
-    std::cout << "_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _" << std::endl;
-    std::cout << "states_c_imm.at(0):" << std::endl << states_c_imm.at(0) << std::endl;
-    std::cout << "states_c_imm.at(1):" << std::endl << states_c_imm.at(1) << std::endl;
-    std::cout << "states_c_imm.at(2):" << std::endl << states_c_imm.at(2) << std::endl;
-    std::cout << "* * * * * * * * * * * * * * * * * * * * * * * * * * * *" << std::endl;
-    std::cout << "TEST_TEST_TEST" << std::endl;
+//    std::cout << "* * * * * * * * * * * * * * * * * * * * * * * * * * * *" << std::endl;
+//    std::cout << "x0_imm:" << std::endl << x0_imm << std::endl;
+//    std::cout << "P0_imm:" << std::endl << P0_imm << std::endl;
+//    std::cout << "_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _" << std::endl;
+//    std::cout << "states0_imm.at(0):" << std::endl << states0_imm.at(0) << std::endl;
+//    std::cout << "states0_imm.at(1):" << std::endl << states0_imm.at(1) << std::endl;
+//    std::cout << "states0_imm.at(2):" << std::endl << states0_imm.at(2) << std::endl;
+//    std::cout << "* * * * * * * * * * * * * * * * * * * * * * * * * * * *" << std::endl;
+//    std::cout << "xp_imm:" << std::endl << xp_imm << std::endl;
+//    std::cout << "Pp_imm:" << std::endl << Pp_imm << std::endl;
+//    std::cout << "_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _" << std::endl;
+//    std::cout << "states_p_imm.at(0):" << std::endl << states_p_imm.at(0) << std::endl;
+//    std::cout << "states_p_imm.at(1):" << std::endl << states_p_imm.at(1) << std::endl;
+//    std::cout << "states_p_imm.at(2):" << std::endl << states_p_imm.at(2) << std::endl;
+//    std::cout << "* * * * * * * * * * * * * * * * * * * * * * * * * * * *" << std::endl;
+//    std::cout << "xc_imm:" << std::endl << xc_imm << std::endl;
+//    std::cout << "Pc_imm:" << std::endl << Pc_imm << std::endl;
+//    std::cout << "_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _" << std::endl;
+//    std::cout << "states_c_imm.at(0):" << std::endl << states_c_imm.at(0) << std::endl;
+//    std::cout << "states_c_imm.at(1):" << std::endl << states_c_imm.at(1) << std::endl;
+//    std::cout << "states_c_imm.at(2):" << std::endl << states_c_imm.at(2) << std::endl;
+//    std::cout << "* * * * * * * * * * * * * * * * * * * * * * * * * * * *" << std::endl;
 }

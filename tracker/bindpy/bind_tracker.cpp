@@ -50,7 +50,7 @@ public:
 
         time+=dt;
 
-        MatrixType estimates(zs.rows(),10);//#TEMP #ZAGL
+        MatrixType estimates(/*zs.rows()*/4,10);//#TEMP #ZAGL
         estimates.setZero();
 
         tracker.step(measurements,dt);
@@ -83,13 +83,17 @@ public:
 
         time+=dt;
 
-        MatrixType estimates(zs.rows(),10);//#TEMP #ZAGL
+        MatrixType estimates(/*zs.rows()*/4,10);//#TEMP #ZAGL
         estimates.setZero();
 
         tracker.step(measurements,dt);
 
         for(int i=0;i<tracker.tracks.size();i++)
             estimates.row(i) = Utils::transpose(tracker.tracks.at(i)->getState());
+
+        estimates.conservativeResize(estimates.rows(),estimates.cols()+1);
+        for(int i=0;i<tracker.tracks.size();i++)
+            estimates(i,10) = static_cast<int>(tracker.tracks.at(i)->isLastMeas());
 
         return estimates;
     }

@@ -177,11 +177,14 @@ public:
 template<class M, class MeasurementType, class EstimatorInitType>
 class Track
 {
+    enum struct STATE{UNKNOWN=0,NEW=1,ACTUAL=2,OLD=3};
 private:
     Estimator::Filter<M>* estimator;
     //double price;//#TODO
     double timepoint;
     bool is_init;
+    std::vector<bool> pass_meas;
+    STATE state;
 public:
     long long unsigned int id;
 
@@ -189,8 +192,38 @@ public:
         timepoint(0.),
         estimator(nullptr),
         //price(0.),//#TODO
-        is_init(false)
+        is_init(false),
+        state(STATE::UNKNOWN)
     {}
+
+    void counter(bool b_measurement)
+    {
+        switch (b_measurement) {
+        case true:
+            pass_meas.push_back(true);
+            break;
+        case false:
+            pass_meas.push_back(false);
+            break;
+        }
+
+        int start_unit = pass_meas.size()-4;
+        if(start_unit<0)start_unit=0;
+        int end_unit=pass_meas.size()-1;
+
+        int work_units = (end_unit-start_unit+1);
+
+        int sum=0;
+
+        for(int i=start_unit;i<=end_unit;i++)
+            sum+=pass_meas.at(i);
+
+
+        if(state==STATE::NEW && work_units>=3 && sum>=3./4.)
+            state=STATE::ACTUAL;
+        if(state==STATE::ACTUAL && work_units>=3 && sum<=1./4.)
+            state=STATE::OLD;
+    }
 
     template<class EstimatorInitializator=EstimatorInitType, class ...Types>
     void initialization(MeasurementType m, Types ...args)
@@ -198,6 +231,9 @@ public:
         estimator=EstimatorInitializator()(m,args...);
         timepoint=m.timepoint();
         is_init=true;
+        state = STATE::NEW;
+
+        counter(true);
     }
 
     std::pair<M,M> step(const MeasurementType& m)
@@ -216,6 +252,8 @@ public:
         res_state = c.first;
         res_covariance = c.second;
 
+        counter(true);
+
         return std::make_pair(res_state,res_covariance);
     }
     std::pair<M,M> step(double t)
@@ -229,6 +267,8 @@ public:
         res_state = p.first;
         res_covariance = p.second;
 
+        counter(false);
+
         return std::make_pair(res_state,res_covariance);
     }
     M getState(){return estimator->getState();}
@@ -238,6 +278,15 @@ public:
     M getCovarianceOfMeasurementPredict(){return estimator->getCovarianceOfMeasurementPredict();}
     bool isInit(){return is_init;}
     double getTimePoint(){return timepoint;}
+    double getBigGate(double maxVel, double dt){return maxVel*dt;}
+    double getGate(/*double Pd, double beta, */M S)
+    {
+        double Pd = 0.95;
+        int m = S.rows();
+        double beta = 0.1;
+        return (2*std::log(Pd/((1-Pd)*std::pow(2*M_PI,m/2)*beta*std::sqrt(S.determinant()))));
+    }
     //double getPrice()const{return price;}//#TODO
+    bool isLastMeas(){return pass_meas.back();}
 };
 }
