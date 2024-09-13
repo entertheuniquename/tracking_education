@@ -53,6 +53,35 @@ struct Measurement3 : public Measurement
         return m;
     }
 };
+
+template<class M>
+struct Measurement3R : public Measurement //#TEMP SOLUTION
+{
+    double timepoint() const {return Measurement::timepoint;}
+    double x(){return Measurement::x;}
+    double y(){return Measurement::y;}
+    double z(){return Measurement::z;}
+    double vx() const {return 0.;}
+    double vy() const {return 0.;}
+    double vz() const {return 0.;}
+    double ax() const {return 0.;}
+    double ay() const {return 0.;}
+    double az() const {return 0.;}
+    double w() const {return 0.;}
+    double std_meas_x() const {return Measurement::std_meas_x;}
+    double std_meas_y() const {return Measurement::std_meas_y;}
+    double std_meas_z() const {return Measurement::std_meas_z;}
+    double std_meas_velo_x() const {return 0.;}
+    double std_meas_velo_y() const {return 0.;}
+    double std_meas_velo_z() const {return 0.;}
+    M get() const
+    {
+        M m(3,1);
+        m << Measurement::x,Measurement::y,Measurement::z;
+        return m;
+    }
+};
+
 template<class M>
 struct Measurement2 : public Measurement
 {

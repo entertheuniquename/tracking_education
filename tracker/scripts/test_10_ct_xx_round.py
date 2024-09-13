@@ -26,7 +26,7 @@ Rw = np.diag([pow(w_std,2)])
 
 Q0 = np.diag([process_var, process_var, process_var, process_var_w])
 
-G = e.BindG_10
+G = e.BindG_10_matrix
 
 Q = G(T)@Q0@G(T).T
 
@@ -80,21 +80,21 @@ ekf_ct_est_8g = stand.estimate(e.BindEKF_10_CT_XX,x0_8g,P0,Q0,Rp,Zn8G,T)
                                        x0_2g,P0,Q0,Rp,
                                        e.BindFCT_10,
                                        e.BindHXX_10,
-                                       e.BindG_10,
+                                       e.BindG_10_matrix,
                                        6,100,2000,0.098)
 
 [ddd1, ekf_ct_std_err_5g] = stand.test(e.BindEKF_10_CT_XX,
                                        x0_5g,P0,Q0,Rp,
                                        e.BindFCT_10,
                                        e.BindHXX_10,
-                                       e.BindG_10,
+                                       e.BindG_10_matrix,
                                        6,100,2000,0.245)
 
 [ddd2, ekf_ct_std_err_8g] = stand.test(e.BindEKF_10_CT_XX,
                                        x0_8g,P0,Q0,Rp,
                                        e.BindFCT_10,
                                        e.BindHXX_10,
-                                       e.BindG_10,
+                                       e.BindG_10_matrix,
                                        6,100,2000,0.392)
 
 #[eee2, ekf_ca_std_err_2g] = stand.test(e.BindEKF_10_CA_XX,

@@ -10,7 +10,7 @@ TEST (TrackerGNN,tracker_base_test) {
     //----------------------------------------------------------------------
     struct stateModel
     {
-        Eigen::MatrixXd operator()(const Eigen::MatrixXd& x,double T)
+        Eigen::MatrixXd operator()(const Eigen::MatrixXd& x,double T, MatrixXd state=MatrixXd{})
         {
             Eigen::MatrixXd F(4,4);
             F << 1., T , 0., 0.,
@@ -22,7 +22,7 @@ TEST (TrackerGNN,tracker_base_test) {
     };
     struct measureModel
     {
-        Eigen::MatrixXd operator()(const Eigen::MatrixXd& x)
+        Eigen::MatrixXd operator()(const Eigen::MatrixXd& x, Eigen::MatrixXd z = Eigen::MatrixXd{}, Eigen::MatrixXd state = Eigen::MatrixXd{})
         {
             Eigen::MatrixXd H(2,4);
             H << 1., 0., 0., 0.,
@@ -39,14 +39,23 @@ TEST (TrackerGNN,tracker_base_test) {
     };
     struct noiseTransitionModel
     {
-        Eigen::MatrixXd operator()(double T)
+        Eigen::MatrixXd matrix(double T)
         {
             Eigen::MatrixXd G(4,2);
-            G << T*T/2.,       0.,
-                     T ,       0.,
-                     0.,   T*T/2.,
-                     0.,       T ;
+            G <<   T*T/2.,       0.,
+                       T ,       0.,
+                       0.,   T*T/2.,
+                       0.,       T ;
             return G;
+        }
+        Eigen::MatrixXd operator()(const Eigen::MatrixXd& x, double T)
+        {
+            Eigen::MatrixXd G(4,2);
+            G <<   T*T/2.,       0.,
+                       T ,       0.,
+                       0.,   T*T/2.,
+                       0.,       T ;
+            return G*x;
         }
     };
     double dt = 0.2;

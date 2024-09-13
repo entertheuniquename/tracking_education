@@ -9,7 +9,7 @@ from IPython.display import Markdown as md
 
 import estimator as e
 import math
-import stand_10_cv_xx as stand
+import stand_10_cv_dec as stand
 
 T = 6
 process_var = 1
@@ -24,7 +24,7 @@ Ra = np.diag([pow(acc_std,2), pow(acc_std,2), pow(acc_std,2)])
 
 Q0 = np.diag([process_var, process_var, process_var, process_var_w])
 
-G = e.BindG_10
+G = e.BindG_10_matrix
 
 Q = G(T)@Q0@G(T).T
 
@@ -61,35 +61,35 @@ ekf_ca_est = stand.estimate(e.BindEKF_10_CA_XX,x0,P0,Q0,Rp,Zn,T)
                                   x0,P0,Q0,Rp,
                                   e.BindFCV_10,
                                   e.BindHXX_10,
-                                  e.BindG_10,
+                                  e.BindG_10_matrix,
                                   6,100,2000)
 
 [bbb, kf_ca_std_err] = stand.test(e.BindKF_10_CA_XX,
                                   x0,P0,Q0,Rp,
                                   e.BindFCV_10,
                                   e.BindHXX_10,
-                                  e.BindG_10,
+                                  e.BindG_10_matrix,
                                   6,100,2000)
 
 [ccc, ekf_cv_std_err] = stand.test(e.BindEKF_10_CV_XX,
                                    x0,P0,Q0,Rp,
                                    e.BindFCV_10,
                                    e.BindHXX_10,
-                                   e.BindG_10,
+                                   e.BindG_10_matrix,
                                    6,100,2000)
 
 [ddd, ekf_ct_std_err] = stand.test(e.BindEKF_10_CT_XX,
                                    x0,P0,Q0,Rp,
                                    e.BindFCV_10,
                                    e.BindHXX_10,
-                                   e.BindG_10,
+                                   e.BindG_10_matrix,
                                    6,100,2000)
 
 [ddd, ekf_ca_std_err] = stand.test(e.BindEKF_10_CA_XX,
                                    x0,P0,Q0,Rp,
                                    e.BindFCV_10,
                                    e.BindHXX_10,
-                                   e.BindG_10,
+                                   e.BindG_10_matrix,
                                    6,100,2000)
 
 

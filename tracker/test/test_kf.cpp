@@ -6,7 +6,7 @@ TEST (KF,kf_base_test) {
     //----------------------------------------------------------------------
     struct stateModel
     {
-        Eigen::MatrixXd operator()(const Eigen::MatrixXd& x,double T)
+        Eigen::MatrixXd operator()(const Eigen::MatrixXd& x,double T, MatrixXd state=MatrixXd{})
         {
             Eigen::MatrixXd F(4,4);
             F << 1., T , 0., 0.,
@@ -18,31 +18,24 @@ TEST (KF,kf_base_test) {
     };
     struct measureModel
     {
-        Eigen::MatrixXd operator()(const Eigen::MatrixXd& x)
+        Eigen::MatrixXd operator()(const Eigen::MatrixXd& x, Eigen::MatrixXd z = Eigen::MatrixXd{}, Eigen::MatrixXd state = Eigen::MatrixXd{})
         {
             Eigen::MatrixXd H(2,4);
             H << 1., 0., 0., 0.,
                  0., 0., 1., 0.;
             return H*x;
         }
-        Eigen::MatrixXd operator()()
-        {
-            Eigen::MatrixXd H(2,4);
-            H << 1., 0., 0., 0.,
-                 0., 0., 1., 0.;
-            return H;
-        }
     };
     struct noiseTransitionModel
     {
-        Eigen::MatrixXd operator()(double T)
+        Eigen::MatrixXd operator()(const Eigen::MatrixXd& x, double T)
         {
             Eigen::MatrixXd G(4,2);
             G <<   T*T/2.,       0.,
                        T ,       0.,
                        0.,   T*T/2.,
                        0.,       T ;
-            return G;
+            return G*x;
         }
     };
     Eigen::MatrixXd x0(4,1);

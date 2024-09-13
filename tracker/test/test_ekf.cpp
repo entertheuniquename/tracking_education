@@ -6,7 +6,7 @@ TEST (EKF,ekf_base_test) {
     //----------------------------------------------------------------------
     struct stateModel
     {
-        Eigen::MatrixXd operator()(const Eigen::MatrixXd& x,double T)
+        Eigen::MatrixXd operator()(const Eigen::MatrixXd& x,double T, MatrixXd state=MatrixXd{})
         {
             Eigen::MatrixXd F(4,4);
             F << 1., T , 0., 0.,
@@ -16,66 +16,90 @@ TEST (EKF,ekf_base_test) {
             return F*x;
         }
     };
-    struct stateModel_Jacobian
+    struct stateModelJacobian
     {
-        Eigen::MatrixXd operator()(const Eigen::MatrixXd& x,double T)
+        Eigen::MatrixXd operator()(const Eigen::MatrixXd& x,double T, MatrixXd state=MatrixXd{})
         {
             Eigen::MatrixXd F(4,4);
             F << 1., T , 0., 0.,
                  0., 1., 0., 0.,
                  0., 0., 1., T ,
                  0., 0., 0., 1.;
-            return F;
+            return F*x;
         }
     };
-    struct measureModel
+    struct measureModelPol
     {
-        Eigen::MatrixXd operator()(const Eigen::MatrixXd& x)
+        Eigen::MatrixXd operator()(const Eigen::MatrixXd& x, Eigen::MatrixXd z = Eigen::MatrixXd{}, Eigen::MatrixXd state = Eigen::MatrixXd{})
+        {
+            double X = x(0);
+            double Y = x(2);
+            double angle = atan2(Y,X);
+            double range = sqrt(X*X+Y*Y);
+            Eigen::MatrixXd r(1,2);
+            r << range, angle;
+            //std::cout << "measureModelPol:" << std::endl << r.transpose() << std::endl;
+            return r.transpose();
+        }
+    };
+    struct measureModelJacobianPol
+    {
+        Eigen::MatrixXd matrix(Eigen::MatrixXd state = Eigen::MatrixXd{})
+        {
+            double X = state(0);
+            double Y = state(2);
+            Eigen::MatrixXd J(2,4);
+            J(0,0) = X/std::sqrt((X*X)+(Y*Y));
+            J(0,1) = 0.;
+            J(0,2) = Y/std::sqrt((X*X)+(Y*Y));
+            J(0,3) = 0.;
+
+            J(1,0) = -Y/((X*X)*(1.+((Y*Y)/(X*X))));
+            J(1,1) = 0.;
+            J(1,2) = 1./(X*(1.+((Y*Y)/(X*X))));
+            J(1,3) = 0.;
+            //std::cout << "measureModelJacobianPol:" << std::endl << J*x << std::endl;
+            return J;
+        }
+        Eigen::MatrixXd operator()(const Eigen::MatrixXd& x, Eigen::MatrixXd z = Eigen::MatrixXd{}, Eigen::MatrixXd state = Eigen::MatrixXd{})
+        {return matrix(state)*x;}
+    };
+    struct measureModelDec
+    {
+        Eigen::MatrixXd operator()(const Eigen::MatrixXd& x, Eigen::MatrixXd z = Eigen::MatrixXd{}, Eigen::MatrixXd state = Eigen::MatrixXd{})
         {
             Eigen::MatrixXd H(2,4);
             H << 1., 0., 0., 0.,
                  0., 0., 1., 0.;
+            //std::cout << "measureModelDec:" << std::endl << H*x << std::endl;
             return H*x;
         }
-        Eigen::MatrixXd operator()()
-        {
-            Eigen::MatrixXd H(2,4);
-            H << 1., 0., 0., 0.,
-                 0., 0., 1., 0.;
-            return H;
-        }
     };
-    struct measureModel_Jacobian
+    struct measureModelJacobianDec
     {
-        Eigen::MatrixXd operator()(const Eigen::MatrixXd& x)
+        Eigen::MatrixXd operator()(const Eigen::MatrixXd& x, Eigen::MatrixXd z = Eigen::MatrixXd{}, Eigen::MatrixXd state = Eigen::MatrixXd{})
         {
             Eigen::MatrixXd H(2,4);
             H << 1., 0., 0., 0.,
                  0., 0., 1., 0.;
-            return H;
-        }
-        Eigen::MatrixXd operator()()
-        {
-            Eigen::MatrixXd H(2,4);
-            H << 1., 0., 0., 0.,
-                 0., 0., 1., 0.;
-            return H;
+            //std::cout << "measureModelJacobianDec:" << std::endl << H*x << std::endl;
+            return H*x;
         }
     };
     struct noiseTransitionModel
     {
-        Eigen::MatrixXd operator()(double T)
+        Eigen::MatrixXd operator()(const Eigen::MatrixXd& x, double T)
         {
             Eigen::MatrixXd G(4,2);
             G <<   T*T/2.,       0.,
                        T ,       0.,
                        0.,   T*T/2.,
                        0.,       T ;
-            return G;
+            return G*x;
         }
     };
     Eigen::MatrixXd x0(4,1);
-    x0 << 1., 2., 3., 4.;
+    x0 << 20., 2., 20., 2.;
     Eigen::MatrixXd R(2,2);
     R << 1., 0.,
          0., 1.;
@@ -88,58 +112,267 @@ TEST (EKF,ekf_base_test) {
     Eigen::MatrixXd Q0(2,2);
     Q0 << 1., 0.,
           0., 1.;
-    Eigen::MatrixXd z(2,1);
-    z << 10., 20.;
+    Eigen::MatrixXd z1_dec(2,1);
+    z1_dec << 25., 25.;
+    Eigen::MatrixXd z1_pol(2,1);
+    z1_pol << 35.355, /*45.*/0.785;
+    Eigen::MatrixXd z2_dec(2,1);
+    z2_dec << 30., 20.;
+    Eigen::MatrixXd z2_pol(2,1);
+    z2_pol << 36.056, /*33.69*/0.588;
     double t = 0.2;
     //----------------------------------------------------------------------
-
-    Estimator::EKFMath<Eigen::MatrixXd> ekf_math;
+    //[CREATE]
     Estimator::EKF<Eigen::MatrixXd,
                    stateModel,
-                   measureModel,
+                   measureModelDec,
                    noiseTransitionModel,
-                   stateModel_Jacobian,
-                   measureModel_Jacobian> ekf(x0,P0,Q0,R);
+                   stateModelJacobian,
+                   measureModelJacobianDec> ekf_dec(x0,P0,Q0,R);
 
-    auto zS = ekf.getMeasurementPredictData(t);
+    Eigen::MatrixXd x_dec = ekf_dec.getState();
+    Eigen::MatrixXd P_dec = ekf_dec.getCovariance();
+    Eigen::MatrixXd Q_dec = ekf_dec.getGQG(t);
+    Eigen::MatrixXd R_dec = ekf_dec.getMeasurementNoise();
 
-    auto pred = ekf.predict(t);
-    Eigen::MatrixXd xp1 = pred.first;
-    Eigen::MatrixXd Pp1 = pred.second;
+    //std::cout << "xp1_dec:" << std::endl << xp1_dec << std::endl;
+    //std::cout << "Pp1_dec:" << std::endl << Pp1_dec << std::endl;
+    //std::cout << "xc1_dec:" << std::endl << xc1_dec << std::endl;
+    //std::cout << "Q_dec:" << std::endl << Q_dec << std::endl;
+    //std::cout << "R_dec:" << std::endl << R_dec << std::endl;
+    //std::cout << "Pc1_dec:" << std::endl << Pc1_dec << std::endl;
 
-    auto corr = ekf.correct(z);
-    Eigen::MatrixXd xc1 = corr.first;
-    Eigen::MatrixXd Pc1 = corr.second;
-    Eigen::MatrixXd zp1 = ekf.getMeasurementPredict();
-    Eigen::MatrixXd Sc1 = ekf.getCovarianceOfMeasurementPredict();
+    //FROM filterpy_test_ekf_pol.py
+    Eigen::MatrixXd filterpy_x_dec(4,1);
+    filterpy_x_dec << 20., 2., 20., 2.;
+    Eigen::MatrixXd filterpy_P_dec(4,4);
+    filterpy_P_dec << 1., 0., 0., 0.,
+                      0., 1., 0., 0.,
+                      0., 0., 1., 0.,
+                      0., 0., 0., 1.;
+    Eigen::MatrixXd filterpy_Q_dec(4,4);
+    filterpy_Q_dec << 0.0004 ,0.004,      0.,    0.,
+                       0.004 , 0.04,      0.,    0.,
+                           0.,   0., 0.0004 , 0.004,
+                           0.,   0.,  0.004 ,  0.04;
+    Eigen::MatrixXd filterpy_R_dec(2,2);
+    filterpy_R_dec << 1.,0.,
+                      0.,1.;
 
-    //FROM filterpy_test_ekf.py
-    Eigen::MatrixXd filterpy_xp1(4,1);
-    filterpy_xp1 << 1.4, 2., 3.8, 4.;
-    Eigen::MatrixXd filterpy_Pp1(4,4);
-    filterpy_Pp1 << 1.0404, 0.204,  0.    , 0.   ,
-                    0.204 , 1.04 ,  0.    , 0.   ,
-                    0.    , 0.   ,  1.0404, 0.204,
-                    0.    , 0.   ,  0.204 , 1.04 ;
-    Eigen::MatrixXd filterpy_xc1(4,1);
-    filterpy_xc1 << 5.78514017, 2.85983141, 12.06038032, 5.61968242;
-    Eigen::MatrixXd filterpy_Pc1(4,4);
-    filterpy_Pc1 << 0.50990002, 0.0999804,  0.        , 0.       ,
-                    0.0999804 , 1.019604 ,  0.        , 0.       ,
-                    0.        , 0.       ,  0.50990002, 0.0999804,
-                    0.        , 0.       ,  0.0999804 , 1.019604 ;
-    Eigen::MatrixXd filterpy_Sc1(2,2);
-    filterpy_Sc1 << 2.0404, 0.,
-                    0., 2.0404;
+    ASSERT_TRUE(x_dec.isApprox(filterpy_x_dec,0.001));
+    ASSERT_TRUE(P_dec.isApprox(filterpy_P_dec,0.001));
+    ASSERT_TRUE(Q_dec.isApprox(filterpy_Q_dec,0.001));
+    ASSERT_TRUE(R_dec.isApprox(filterpy_R_dec,0.001));
 
-    ASSERT_TRUE(xp1.isApprox(filterpy_xp1,0.001));
-    ASSERT_TRUE(Pp1.isApprox(filterpy_Pp1,0.001));
-    ASSERT_TRUE(xc1.isApprox(filterpy_xc1,0.001));
-    ASSERT_TRUE(Pc1.isApprox(filterpy_Pc1,0.001));
-    ASSERT_TRUE(Sc1.isApprox(filterpy_Sc1,0.001));
+    //[STEP-1]
+    auto zS1_dec = ekf_dec.getMeasurementPredictData(t);
+    Eigen::MatrixXd S1_dec = zS1_dec.second;
 
-    ASSERT_TRUE(zp1.isApprox(zS.first,0.001));
-    ASSERT_TRUE(Sc1.isApprox(zS.second,0.001));
+    auto pred_dec = ekf_dec.predict(t);
+    Eigen::MatrixXd xp1_dec = pred_dec.first;
+    Eigen::MatrixXd Pp1_dec = pred_dec.second;
+
+    Eigen::MatrixXd filterpy_xp1_dec(4,1);
+    filterpy_xp1_dec << 20.4, 2., 20.4, 2.;
+    Eigen::MatrixXd filterpy_Pp1_dec(4,4);
+    filterpy_Pp1_dec << 1.0404, 0.204,     0.,    0.,
+                         0.204,  1.04,     0.,    0.,
+                            0.,    0., 1.0404, 0.204,
+                            0.,    0.,  0.204,  1.04;
+
+    auto corr_dec = ekf_dec.correct(z1_dec);
+    Eigen::MatrixXd xc1_dec = corr_dec.first;
+    Eigen::MatrixXd Pc1_dec = corr_dec.second;
+
+    Eigen::MatrixXd filterpy_xc1_dec(4,1);
+    filterpy_xc1_dec << 22.74554009, 2.45990982, 22.74554009, 2.45990982;
+    Eigen::MatrixXd filterpy_Pc1_dec(4,4);
+    filterpy_Pc1_dec << 0.50990002, 0.0999804,         0.,        0.,
+                         0.0999804,  1.019604,         0.,        0.,
+                                0.,        0., 0.50990002, 0.0999804,
+                                0.,        0.,  0.0999804,  1.019604;
+    Eigen::MatrixXd filterpy_S1_dec(2,2);
+    filterpy_S1_dec << 2.0404,      0,
+                           0., 2.0404;
+    Eigen::MatrixXd filterpy_K1_dec(2,4);
+    filterpy_K1_dec << 0.50990002,         0.,
+                        0.0999804,         0.,
+                               0., 0.50990002,
+                               0.,  0.0999804;
+    Eigen::MatrixXd filterpy_z1_dec(2,1);
+    filterpy_z1_dec << 25., 25.;
+    ASSERT_TRUE(xp1_dec.isApprox(filterpy_xp1_dec,0.001));
+    ASSERT_TRUE(Pp1_dec.isApprox(filterpy_Pp1_dec,0.001));
+    ASSERT_TRUE(xc1_dec.isApprox(filterpy_xc1_dec,0.001));
+    ASSERT_TRUE(Pc1_dec.isApprox(filterpy_Pc1_dec,0.001));
+    ASSERT_TRUE(S1_dec.isApprox(filterpy_S1_dec,0.001));
+
+    //[STEP-2]
+    auto zS2_dec = ekf_dec.getMeasurementPredictData(t);
+    Eigen::MatrixXd S2_dec = zS2_dec.second;
+
+    auto pred_dec2 = ekf_dec.predict(t);
+    Eigen::MatrixXd xp2_dec = pred_dec2.first;
+    Eigen::MatrixXd Pp2_dec = pred_dec2.second;
+
+    Eigen::MatrixXd filterpy_xp2_dec(4,1);
+    filterpy_xp2_dec << 23.23752205, 2.45990982, 23.23752205, 2.45990982;
+    Eigen::MatrixXd filterpy_Pp2_dec(4,4);
+    filterpy_Pp2_dec << 0.59107634, 0.3079012,         0.,        0.,
+                         0.3079012,  1.059604,         0.,        0.,
+                                0.,        0., 0.59107634, 0.3079012,
+                                0.,        0.,  0.3079012,  1.059604;
+
+    auto corr_dec2 = ekf_dec.correct(z2_dec);
+    Eigen::MatrixXd xc2_dec = corr_dec2.first;
+    Eigen::MatrixXd Pc2_dec = corr_dec2.second;
+
+    Eigen::MatrixXd filterpy_xc2_dec(4,1);
+    filterpy_xc2_dec << 25.74974639, 3.76856799, 22.03479995, 1.83339248;
+    Eigen::MatrixXd filterpy_Pc2_dec(4,4);
+    filterpy_Pc2_dec << 0.37149464, 0.19351755, 0.        , 0.       ,
+                        0.19351755, 1.00001971, 0.        , 0.       ,
+                        0.        , 0.        , 0.37149464, 0.19351755,
+                        0.        , 0.        , 0.19351755, 1.00001971;
+    Eigen::MatrixXd filterpy_S2_dec(2,2);
+    filterpy_S2_dec << 1.59107634, 0.        ,
+                       0.        , 1.59107634;
+    Eigen::MatrixXd filterpy_K2_dec(2,4);
+    filterpy_K2_dec << 0.37149464, 0.        ,
+                       0.19351755, 0.        ,
+                       0.        , 0.37149464,
+                       0.        , 0.19351755;
+    Eigen::MatrixXd filterpy_z2_dec(2,1);
+    filterpy_z2_dec << 30., 20.;
+    ASSERT_TRUE(xp2_dec.isApprox(filterpy_xp2_dec,0.001));
+    ASSERT_TRUE(Pp2_dec.isApprox(filterpy_Pp2_dec,0.001));
+    ASSERT_TRUE(xc2_dec.isApprox(filterpy_xc2_dec,0.001));
+    ASSERT_TRUE(Pc2_dec.isApprox(filterpy_Pc2_dec,0.001));
+    ASSERT_TRUE(S2_dec.isApprox(filterpy_S2_dec,0.001));
+    //----------------------------------------------------------------------
+    //[CREATE]
+    Estimator::EKF<Eigen::MatrixXd,
+                   stateModel,
+                   measureModelPol,
+                   noiseTransitionModel,
+                   stateModelJacobian,
+                   measureModelJacobianPol> ekf_pol(x0,P0,Q0,R);
+
+    Eigen::MatrixXd x_pol = ekf_pol.getState();
+    Eigen::MatrixXd P_pol = ekf_pol.getCovariance();
+    Eigen::MatrixXd Q_pol = ekf_pol.getGQG(t);
+    Eigen::MatrixXd R_pol = ekf_pol.getMeasurementNoise();
+
+    //FROM filterpy_test_ekf_pol.py
+    Eigen::MatrixXd filterpy_x_pol(4,1);
+    filterpy_x_pol << 20., 2., 20., 2.;
+    Eigen::MatrixXd filterpy_P_pol(4,4);
+    filterpy_P_pol << 1., 0., 0., 0.,
+                      0., 1., 0., 0.,
+                      0., 0., 1., 0.,
+                      0., 0., 0., 1.;
+    Eigen::MatrixXd filterpy_Q_pol(4,4);
+    filterpy_Q_pol << 0.0004 ,0.004,      0.,    0.,
+                       0.004 , 0.04,      0.,    0.,
+                           0.,   0., 0.0004 , 0.004,
+                           0.,   0.,  0.004 ,  0.04;
+    Eigen::MatrixXd filterpy_R_pol(2,2);
+    filterpy_R_pol << 1.,0.,
+                      0.,1.;
+
+    ASSERT_TRUE(x_pol.isApprox(filterpy_x_pol,0.001));
+    ASSERT_TRUE(P_pol.isApprox(filterpy_P_pol,0.001));
+    ASSERT_TRUE(Q_pol.isApprox(filterpy_Q_pol,0.001));
+    ASSERT_TRUE(R_pol.isApprox(filterpy_R_pol,0.001));
+
+    //[STEP-1]
+    auto zS1_pol = ekf_pol.getMeasurementPredictData(t);
+    Eigen::MatrixXd S1_pol = zS1_pol.second;
+
+    auto pred_pol = ekf_pol.predict(t);
+    Eigen::MatrixXd xp1_pol = pred_pol.first;
+    Eigen::MatrixXd Pp1_pol = pred_pol.second;
+
+    Eigen::MatrixXd filterpy_xp1_pol(4,1);
+    filterpy_xp1_pol << 20.4, 2., 20.4, 2.;
+    Eigen::MatrixXd filterpy_Pp1_pol(4,4);
+    filterpy_Pp1_pol << 1.0404, 0.204,     0.,    0.,
+                         0.204,  1.04,     0.,    0.,
+                            0.,    0., 1.0404, 0.204,
+                            0.,    0.,  0.204,  1.04;
+
+    auto corr_pol = ekf_pol.correct(z1_pol);
+    Eigen::MatrixXd xc1_pol = corr_pol.first;
+    Eigen::MatrixXd Pc1_pol = corr_pol.second;
+
+    Eigen::MatrixXd filterpy_xc1_pol(4,1);
+    filterpy_xc1_pol << 22.74542798, 2.45988784, 22.7454077, 2.45988386;
+    Eigen::MatrixXd filterpy_Pc1_pol(4,4);
+    filterpy_Pc1_pol <<  0.77450057,  0.15186286, -0.26460055, -0.05188246,
+                         0.15186286,  1.02977703, -0.05188246, -0.01017303,
+                        -0.26460055, -0.05188246,  0.77450057,  0.15186286,
+                        -0.05188246, -0.01017303,  0.15186286,  1.02977703;
+    Eigen::MatrixXd filterpy_S1_pol(2,2);
+    filterpy_S1_pol << 2.04040000e+00, 1.12879282e-18,
+                       1.62186435e-18, 1.00125000e+00;
+    Eigen::MatrixXd filterpy_K1_pol(2,4);
+    filterpy_K1_pol << 0.36055376, -0.02546816,
+                       0.07069682, -0.00499376,
+                       0.36055376,  0.02546816,
+                       0.07069682,  0.00499376;
+    Eigen::MatrixXd filterpy_z1_pol(2,1);
+    filterpy_z1_pol << 35.355, 0.785;
+
+    //std::cout << "xc1_pol:" << std::endl << xc1_pol << std::endl;
+
+    ASSERT_TRUE(xp1_pol.isApprox(filterpy_xp1_pol,0.001));
+    ASSERT_TRUE(Pp1_pol.isApprox(filterpy_Pp1_pol,0.001));
+    ASSERT_TRUE(xc1_pol.isApprox(filterpy_xc1_pol,0.001));
+    ASSERT_TRUE(Pc1_pol.isApprox(filterpy_Pc1_pol,0.001));
+    ASSERT_TRUE(S1_pol.isApprox(filterpy_S1_pol,0.001));
+
+    //[STEP-2]
+    auto zS2_pol = ekf_pol.getMeasurementPredictData(t);
+    Eigen::MatrixXd S2_pol = zS2_pol.second;
+
+    auto pred_pol2 = ekf_pol.predict(t);
+    Eigen::MatrixXd xp2_pol = pred_pol2.first;
+    Eigen::MatrixXd Pp2_pol = pred_pol2.second;
+
+    Eigen::MatrixXd filterpy_xp2_pol(4,1);
+    filterpy_xp2_pol << 23.23740555, 2.45988784, 23.23738447, 2.45988386;
+    Eigen::MatrixXd filterpy_Pp2_pol(4,4);
+    filterpy_Pp2_pol <<  0.8768368,  0.36181826, -0.28576046, -0.05391707,
+                        0.36181826,  1.06977703, -0.05391707, -0.01017303,
+                       -0.28576046, -0.05391707,   0.8768368,  0.36181826,
+                       -0.05391707, -0.01017303,  0.36181826,  1.06977703;
+
+    auto corr_pol2 = ekf_pol.correct(z2_pol);
+    Eigen::MatrixXd xc2_pol = corr_pol2.first;
+    Eigen::MatrixXd Pc2_pol = corr_pol2.second;
+
+    Eigen::MatrixXd filterpy_xc2_pol(4,1);
+    filterpy_xc2_pol << 24.08119142, 2.89862375, 24.0713034, 2.89509144;
+    Eigen::MatrixXd filterpy_Pc2_pol(4,4);
+    filterpy_Pc2_pol <<   0.76642064,  0.30440282, -0.39492619, -0.11088537,
+                          0.30440282,  1.03990492, -0.11088534, -0.03988524,
+                         -0.39492619, -0.11088534,  0.76642103,  0.30440299,
+                         -0.11088537, -0.03988524,  0.30440299,  1.03990499;
+    Eigen::MatrixXd filterpy_S2_pol(2,2);
+    filterpy_S2_pol << 1.59107634e+00, -7.88691078e-09,
+                      -7.88691078e-09,  1.00107653e+00;
+    Eigen::MatrixXd filterpy_K2_pol(2,4);
+    filterpy_K2_pol << 0.26268662, -0.02498874,
+                       0.13683766, -0.00893577,
+                       0.26268615,  0.02498876,
+                       0.13683749,  0.00893578;
+    Eigen::MatrixXd filterpy_z2_pol(2,1);
+    filterpy_z2_pol << 36.056, 0.588;
+    ASSERT_TRUE(xp2_pol.isApprox(filterpy_xp2_pol,0.001));
+    ASSERT_TRUE(Pp2_pol.isApprox(filterpy_Pp2_pol,0.001));
+    ASSERT_TRUE(xc2_pol.isApprox(filterpy_xc2_pol,0.001));
+    ASSERT_TRUE(Pc2_pol.isApprox(filterpy_Pc2_pol,0.001));
+    ASSERT_TRUE(S2_pol.isApprox(filterpy_S2_pol,0.001));
 }
 
 //TEST (EKF,ekf_ct_test) {
