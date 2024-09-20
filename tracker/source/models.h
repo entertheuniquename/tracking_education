@@ -7,11 +7,12 @@ namespace Models10
 {
 enum class POSITION_X{X=0,VX=1,AX=2,Y=3,VY=4,AY=5,Z=6,VZ=7,AZ=8,W=9};
 enum class POSITION_Z{X=0,Y=1,Z=2};
+enum class POSITION_R{R=0,A=1,E=2};
 //-----------------------------------------------------------------
 template <class M>
 struct FCV
 {
-    M operator()(const M& x,double T)
+    M matrix(double T, M state=M{})
     {
         M F(10,10);
         F << 1., T , 0., 0., 0., 0., 0., 0., 0., 0.,
@@ -24,14 +25,19 @@ struct FCV
              0., 0., 0., 0., 0., 0., 0., 1., 0., 0.,
              0., 0., 0., 0., 0., 0., 0., 0., 1., 0.,
              0., 0., 0., 0., 0., 0., 0., 0., 0., 1.;
-        return F*x;
+        return F;
+    }
+    M operator()(const M& x, double T, M state=M{})
+    {
+        //std::cout << " = FCV = " << std::endl;
+        return matrix(T)*x;
     }
 };
 //-----------------------------------------------------------------
 template <class M>
 struct FCA
 {
-    M operator()(const M& x,double T)
+    M matrix(double T, M state=M{})
     {
         M F(10,10);
         F << 1.,     T , T*T/2.,     0.,      0.,     0.,     0.,     0.,     0.,     0.,
@@ -44,16 +50,17 @@ struct FCA
              0.,     0.,     0.,     0.,      0.,     0.,     0.,     1.,     T ,     0.,
              0.,     0.,     0.,     0.,      0.,     0.,     0.,     0.,     1.,     0.,
              0.,     0.,     0.,     0.,      0.,     0.,     0.,     0.,     0.,     1.;
-        return F*x;
+        return F;
     }
+    M operator()(const M& x, double T, M state=M{}){return matrix(T)*x;}
 };
 //-----------------------------------------------------------------
 template <class M>
 struct FCT
 {
-    M operator()(const M& x,double T)
+    M matrix(double T, M state=M{})
     {
-        long double w = x(static_cast<int>(POSITION_X::W));
+        long double w = state(static_cast<int>(POSITION_X::W));
         if(w==0.)
             w=Utils::eps();
 
@@ -73,16 +80,17 @@ struct FCT
              0., 0., 0., 0., 0., 0., 0., 1., 0., 0.,
              0., 0., 0., 0., 0., 0., 0., 0., 1., 0.,
              0., 0., 0., 0., 0., 0., 0., 0., 0., 1.;
-        return F*x;
+        return F;
     }
+    M operator()(const M& x,double T,M state=M{}){return matrix(T,state)*x;}
 };
 //-----------------------------------------------------------------
 template <class M>
 struct FCT_deg
 {
-    M operator()(const M& x,double T)
+    M matrix(double T, M state=M{})
     {
-        long double w = x(static_cast<int>(POSITION_X::W));
+        long double w = state(static_cast<int>(POSITION_X::W));
         if(w==0.)
             w=Utils::eps();
 
@@ -102,16 +110,17 @@ struct FCT_deg
              0., 0., 0., 0., 0., 0., 0., 1., 0., 0.,
              0., 0., 0., 0., 0., 0., 0., 0., 1., 0.,
              0., 0., 0., 0., 0., 0., 0., 0., 0., 1.;
-        return F*x;
+        return F;
     }
+    M operator()(const M& x, double T,M state=M{}){return matrix(T,state)*x;}
 };
 //-----------------------------------------------------------------
 template <class M>
 struct FCTv
 {
-    M operator()(const M& x,double T)
+    M matrix(double T, M state=M{})
     {
-        double w = x(static_cast<int>(POSITION_X::W));
+        double w = state(static_cast<int>(POSITION_X::W));
         if(w==0.)
             w=Utils::eps();
 
@@ -131,14 +140,15 @@ struct FCTv
              0.,  S, 0., 0., 0., 0., 0.,  C, 0., 0.,
              0., 0., 0., 0., 0., 0., 0., 0., 1., 0.,
              0., 0., 0., 0., 0., 0., 0., 0., 0., 1.;
-        return F*x;
+        return F;
     }
+    M operator()(const M& x,double T, M state=M{}){return matrix(T,state)*x;}
 };
 //-----------------------------------------------------------------
 template <class M>
 struct FCV_Jacobian
 {
-    M operator()(double T)
+    M matrix(double T, M state=M{})
     {
         M J(10,10);
         J.setZero();
@@ -154,28 +164,13 @@ struct FCV_Jacobian
              0., 0., 0., 0., 0., 0., 0., 0., 0., 1.;
         return J;
     }
-    M operator()(const M& x, double T)
-    {
-        M J(10,10);
-        J.setZero();
-        J << 1., T , 0., 0., 0., 0., 0., 0., 0., 0.,
-             0., 1., 0., 0., 0., 0., 0., 0., 0., 0.,
-             0., 0., 1., 0., 0., 0., 0., 0., 0., 0.,
-             0., 0., 0., 1., T , 0., 0., 0., 0., 0.,
-             0., 0., 0., 0., 1., 0., 0., 0., 0., 0.,
-             0., 0., 0., 0., 0., 1., 0., 0., 0., 0.,
-             0., 0., 0., 0., 0., 0., 1., T , 0., 0.,
-             0., 0., 0., 0., 0., 0., 0., 1., 0., 0.,
-             0., 0., 0., 0., 0., 0., 0., 0., 1., 0.,
-             0., 0., 0., 0., 0., 0., 0., 0., 0., 1.;
-        return J;
-    }
+    M operator()(const M& x, double T, M state=M{}){ return matrix(T)*x;}
 };
 //-----------------------------------------------------------------
 template <class M>
 struct FCA_Jacobian
 {
-    M operator()(double T)
+    M matrix(double T, M state=M{})
     {
         M J(10,10);
         J.setZero();
@@ -191,32 +186,17 @@ struct FCA_Jacobian
              0., 0.,               0.,   0., 0.,               0.,   0., 0.,               0.,    1.;
         return J;
     }
-    M operator()(const M& x,double T)
-    {
-        M J(10,10);
-        J.setZero();
-        J << 1., T , std::pow(T,2)/2.,   0., 0.,               0.,   0., 0.,               0.,    0.,
-             0., 1.,               T,    0., 0.,               0.,   0., 0.,               0.,    0.,
-             0., 0.,               1.,   0., 0.,               0.,   0., 0.,               0.,    0.,
-             0., 0.,               0.,   1., T , std::pow(T,2)/2.,   0., 0.,               0.,    0.,
-             0., 0.,               0.,   0., 1.,               T ,   0., 0.,               0.,    0.,
-             0., 0.,               0.,   0., 0.,               1.,   0., 0.,               0.,    0.,
-             0., 0.,               0.,   0., 0.,               0.,   1., T , std::pow(T,2)/2.,    0.,
-             0., 0.,               0.,   0., 0.,               0.,   0., 1.,               T ,    0.,
-             0., 0.,               0.,   0., 0.,               0.,   0., 0.,               1.,    0.,
-             0., 0.,               0.,   0., 0.,               0.,   0., 0.,               0.,    1.;
-        return J;
-    }
+    M operator()(const M& x,double T, M state=M{}){return matrix(T)*x;}
 };
 //-----------------------------------------------------------------
 template <class M>
 struct FCT_Jacobian
 {
-    M operator()(const M& x,double T)
+    M matrix(double T, M state=M{})
     {
-        double vx = x(static_cast<int>(POSITION_X::VX));
-        double vy = x(static_cast<int>(POSITION_X::VY));
-        double w = x(static_cast<int>(POSITION_X::W));
+        double vx = state(static_cast<int>(POSITION_X::VX));
+        double vy = state(static_cast<int>(POSITION_X::VY));
+        double w = state(static_cast<int>(POSITION_X::W));
         double t = T;
 
         if(w==0.)
@@ -337,16 +317,17 @@ struct FCT_Jacobian
 
         return J;
     }
+    M operator()(const M& x,double T, M state=M{}){return matrix(T,state)*x;}
 };
 //-----------------------------------------------------------------
 template <class M>
 struct FCT_deg_Jacobian
 {
-    M operator()(const M& x,double T)
+    M matrix(double T, M state=M{})
     {
-        double vx = x(static_cast<int>(POSITION_X::VX));
-        double vy = x(static_cast<int>(POSITION_X::VY));
-        double w = x(static_cast<int>(POSITION_X::W));
+        double vx = state(static_cast<int>(POSITION_X::VX));
+        double vy = state(static_cast<int>(POSITION_X::VY));
+        double w = state(static_cast<int>(POSITION_X::W));
         double t = T;
 
         if(w==0.)
@@ -467,16 +448,17 @@ struct FCT_deg_Jacobian
 
         return J;
     }
+    M operator()(const M& x, double T, M state=M{}){return matrix(T,state)*x;}
 };
 //-----------------------------------------------------------------
 template <class M>
 struct FCTv_Jacobian
 {
-    M operator()(const M& x,double T)
+    M matrix(double T, M state=M{})
     {
-        double vx = x(static_cast<int>(POSITION_X::VX));
-        double vz = x(static_cast<int>(POSITION_X::VZ));
-        double w = x(static_cast<int>(POSITION_X::W));
+        double vx = state(static_cast<int>(POSITION_X::VX));
+        double vz = state(static_cast<int>(POSITION_X::VZ));
+        double w = state(static_cast<int>(POSITION_X::W));
         double t = T;
 
         if(w==0.)
@@ -597,12 +579,13 @@ struct FCTv_Jacobian
 
         return J;
     }
+    M operator()(const M& x, double T, M state=M{}){return matrix(T,state)*x;}
 };
 //-----------------------------------------------------------------
 template <class M>
 struct G
 {
-    M operator()(double T)
+    M matrix(double T)
     {
         M G(10,4);
         G <<   T*T/2.,       0.,       0.,       0.,
@@ -614,51 +597,115 @@ struct G
                    0.,       0.,   T*T/2.,       0.,
                    0.,       0.,       T ,       0.,
                    0.,       0.,       1.,       0.,
-                   0.,       0.,       0.,       1.;//#TODO - разобраться как правильно!
+                   0.,       0.,       0.,       T ;//#TODO - разобраться как правильно! 1. или T
         return G;
     }
+    M operator()(const M& x,double T){return matrix(T)*x;}
 };
 //-----------------------------------------------------------------
 template <class M>
 struct H
 {
-    M operator()(const M& x, const M& z = M{})
+    M matrix()
     {
-        M h(3,10);
-        h << 1., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+        M H(3,10);
+        H << 1., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
              0., 0., 0., 1., 0., 0., 0., 0., 0., 0.,
              0., 0., 0., 0., 0., 0., 1., 0., 0., 0.;
-        return h*x;
+        return H;
     }
-    M operator()()
-    {
-        M h(3,10);
-        h << 1., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-             0., 0., 0., 1., 0., 0., 0., 0., 0., 0.,
-             0., 0., 0., 0., 0., 0., 1., 0., 0., 0.;
-        return h;
-    }
+    M operator()(const M& x, M z = M{}, M state=M{}){return matrix()*x;}
 };
 //-----------------------------------------------------------------
 template <class M>
 struct H_Jacobian
 {
-    M operator()(const M& x, const M& z = M{})
+    M matrix(M state=M{})
     {
-        M h(3,10);
-        h << 1., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+        M H(3,10);
+        H << 1., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
              0., 0., 0., 1., 0., 0., 0., 0., 0., 0.,
              0., 0., 0., 0., 0., 0., 1., 0., 0., 0.;
-        return h*x;
+        return H;
     }
-    M operator()()
+    M operator()(const M& x, M z = M{}, M state=M{}){return matrix()*x;}
+};
+//-----------------------------------------------------------------
+template <class M>
+struct H_POL
+{
+    M operator()(const M& x, M z = M{}, M state=M{})
     {
-        M h(3,10);
-        h << 1., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-             0., 0., 0., 1., 0., 0., 0., 0., 0., 0.,
-             0., 0., 0., 0., 0., 0., 1., 0., 0., 0.;
-        return h;
+        //std::cout << " -M-M-M-M-M-M-M-M-M-M-M-M-M-M-M-M-M-M-M-M-M-M-" << std::endl;
+        //std::cout << "state(dec): " << Utils::transpose(state) << std::endl;
+        double X = state(static_cast<int>(POSITION_X::X));
+        double Y = state(static_cast<int>(POSITION_X::Y));
+        double Z = state(static_cast<int>(POSITION_X::Z));
+        double elev = atan2(Z, sqrt(Y*Y+X*X));
+        double angle = atan2(Y,X);
+        double range = sqrt(X*X+Y*Y+Z*Z);
+        if (!(z.cols()==0) && !(z.rows()==0))
+        {
+            double angle0 = angle;
+            angle = z(1) + Utils::ComputeAngleDifference(angle, z(1));
+            if(angle0!=angle)
+                std::cout << std::endl << "          angle(Z)!!! : " << angle << " <- " << angle0 << std::endl << std::endl;
+        }
+        M r(1,3);
+        r << range, angle, elev;
+        //std::cout << "measurement(pol): " << r << std::endl;
+        //std::cout << " -M-M-M-M-M-M-M-M-M-M-M-M-M-M-M-M-M-M-M-M-M-M-" << std::endl;
+        return r.transpose();
     }
+};
+//-----------------------------------------------------------------
+template <class M>
+struct H_POL_Jacobian
+{
+    M matrix(M state=M{})
+    {
+        double x = state(static_cast<int>(POSITION_X::X));
+        double y = state(static_cast<int>(POSITION_X::Y));
+        double z = state(static_cast<int>(POSITION_X::Z));
+
+        M J(3,10);
+        J.setZero();
+
+        J(0,0) = x/std::sqrt(std::pow(x,2.)+std::pow(y,2.)+std::pow(z,2.));
+        J(0,1) = 0.;
+        J(0,2) = 0.;
+        J(0,3) = y/std::sqrt(std::pow(x,2.)+std::pow(y,2.)+std::pow(z,2.));
+        J(0,4) = 0.;
+        J(0,5) = 0.;
+        J(0,6) = z/std::sqrt(std::pow(x,2.)+std::pow(y,2.)+std::pow(z,2.));
+        J(0,7) = 0.;
+        J(0,8) = 0.;
+        J(0,9) = 0.;
+
+        J(1,0) = -y/(std::pow(x,2.)*(1.+(std::pow(y,2.)/std::pow(x,2.))));
+        J(1,1) = 0.;
+        J(1,2) = 0.;
+        J(1,3) = 1./(x*(1.+(std::pow(y,2.)/std::pow(x,2.))));
+        J(1,4) = 0.;
+        J(1,5) = 0.;
+        J(1,6) = 0.;
+        J(1,7) = 0.;
+        J(1,8) = 0.;
+
+        J(2,0) = (-x*z)/(std::pow((std::pow(x,2.)+std::pow(y,2.)),3./2.)*(std::pow(z,2.)/(std::pow(x,2.)+std::pow(y,2.))+1.));
+        J(2,1) = 0.;
+        J(2,2) = 0.;
+        J(2,3) = (-y*z)/(std::pow((std::pow(x,2.)+std::pow(y,2.)),3./2.)*(std::pow(z,2.)/(std::pow(x,2.)+std::pow(y,2.))+1.));
+        J(2,4) = 0.;
+        J(2,5) = 0.;
+        J(2,6) = 1./(std::sqrt(std::pow(x,2.)+std::pow(y,2.)*(std::pow(z,2.)/(std::pow(x,2.)+std::pow(y,2.))+1.)));
+        J(2,7) = 0.;
+        J(2,8) = 0.;
+        J(2,9) = 0.;
+
+        return J;
+    }
+    M operator()(const M& x, M z=M{}, M state=M{}){return matrix(state)*x;}
 };
 //-----------------------------------------------------------------
 }
@@ -671,7 +718,7 @@ enum class POSITION_Z{X=0,Y=1,Z=2};
 template <class M>
 struct FCV
 {
-    M operator()(const M& x,double T)
+    M matrix(double T)
     {
         M F(7,7);
         F << 1., T , 0., 0., 0., 0., 0.,
@@ -681,16 +728,17 @@ struct FCV
              0., 0., 0., 0., 1., T , 0.,
              0., 0., 0., 0., 0., 1., 0.,
              0., 0., 0., 0., 0., 0., 1.;
-        return F*x;
+        return F;
     }
+    M operator()(const M& x, double T, M state=M{}){return matrix(T)*x;}
 };
 //-----------------------------------------------------------------
 template <class M>
 struct FCT
 {
-    M operator()(const M& x,double T)
+    M matrix(double T, M state=M{})
     {
-        double w = x(static_cast<int>(POSITION_X::W));
+        double w = state(static_cast<int>(POSITION_X::W));
         if(w==0)
             w=Utils::eps();
 
@@ -707,16 +755,17 @@ struct FCT
              0., 0., 0., 0., 1., T , 0.,
              0., 0., 0., 0., 0., 1., 0.,
              0., 0., 0., 0., 0., 0., 1.;
-        return F*x;
+        return F;
     }
+    M operator()(const M& x, double T, M state=M{}){return matrix(T,state)*x;}
 };
 //-----------------------------------------------------------------
 template <class M>
 struct FCT_deg
 {
-    M operator()(const M& x,double T)
+    M matrix(double T, M state=M{})
     {
-        double w = (M_PI/180.)*x(static_cast<int>(POSITION_X::W));
+        double w = (M_PI/180.)*state(static_cast<int>(POSITION_X::W));
         if(w==0)
             w=Utils::eps();
 
@@ -733,14 +782,15 @@ struct FCT_deg
              0., 0., 0., 0., 1., T , 0.,
              0., 0., 0., 0., 0., 1., 0.,
              0., 0., 0., 0., 0., 0., 1.;
-        return F*x;
+        return F;
     }
+    M operator()(const M& x, double T, M state=M{}){return matrix(T,state)*x;}
 };
 //-----------------------------------------------------------------
 template <class M>
 struct FCV_Jacobian
 {
-    M operator()(double T)
+    M matrix(double T)
     {
         M J(7,7);
         J.setZero();
@@ -753,16 +803,17 @@ struct FCV_Jacobian
              0.,0.,0.,0.,0.,0.,1.;
         return J;
     }
+    M operator()(const M& x, double T, M state=M{}){return matrix(T)*x;}
 };
 //-----------------------------------------------------------------
 template <class M>
 struct FCT_Jacobian
 {
-    M operator()(const M& x,double T)
+    M matrix(double T, M state=M{})
     {
-        double vx = x(static_cast<int>(POSITION_X::VX));
-        double vy = x(static_cast<int>(POSITION_X::VY));
-        double w = x(static_cast<int>(POSITION_X::W));
+        double vx = state(static_cast<int>(POSITION_X::VX));
+        double vy = state(static_cast<int>(POSITION_X::VY));
+        double w = state(static_cast<int>(POSITION_X::W));
         double t = T;
 
         if(w==0)
@@ -829,12 +880,13 @@ struct FCT_Jacobian
 
         return J;
     }
+    M operator()(const M& x, double T, M state=M{}){return matrix(T,state)*x;}
 };
 //-----------------------------------------------------------------
 template <class M>
 struct G
 {
-    M operator()(double T)
+    M matrix(double T)
     {
         M G(7,4);
         G <<   T*T/2.,       0.,       0.,       0.,
@@ -846,12 +898,13 @@ struct G
                    0.,       0.,       0.,       T ;
         return G;
     }
+    M operator()(const M& x,double T){return matrix(T)*x;}
 };
 //-----------------------------------------------------------------
 template <class M>
 struct G2//#TODO - временное название
 {
-    M operator()(double T)
+    M matrix(double T)
     {
         M G(7,4);
         G <<   T*T/2.,       0.,       0.,       0.,
@@ -863,53 +916,40 @@ struct G2//#TODO - временное название
                    0.,       0.,       0.,       1.;
         return G;
     }
+    M operator()(const M& x,double T){return matrix(T)*x;}
 };
 //-----------------------------------------------------------------
 template <class M>
 struct H
 {
-    M operator()(const M& x, const M& z = M{})
+    M matrix()
     {
-        M h(3,7);
-        h << 1., 0., 0., 0., 0., 0., 0.,
+        M H(3,7);
+        H << 1., 0., 0., 0., 0., 0., 0.,
              0., 0., 1., 0., 0., 0., 0.,
              0., 0., 0., 0., 1., 0., 0.;
-        return h*x;
+        return H;
     }
-    M operator()()
-    {
-        M h(3,7);
-        h << 1., 0., 0., 0., 0., 0., 0.,
-             0., 0., 1., 0., 0., 0., 0.,
-             0., 0., 0., 0., 1., 0., 0.;
-        return h;
-    }
+    M operator()(const M& x, M z = M{}){return matrix()*x;}
 };
 //-----------------------------------------------------------------
 template <class M>
 struct H_Jacobian
 {
-    M operator()(const M& x, const M& z = M{})
+    M matrix()
     {
-        M h(3,7);
-        h << 1., 0., 0., 0., 0., 0., 0.,
+        M H(3,7);
+        H << 1., 0., 0., 0., 0., 0., 0.,
              0., 0., 1., 0., 0., 0., 0.,
              0., 0., 0., 0., 1., 0., 0.;
-        return h*x;
+        return H;
     }
-    M operator()()
-    {
-        M h(3,7);
-        h << 1., 0., 0., 0., 0., 0., 0.,
-             0., 0., 1., 0., 0., 0., 0.,
-             0., 0., 0., 0., 1., 0., 0.;
-        return h;
-    }
+    M operator()(const M& x, M z = M{}){return matrix()*x;}
 };
 //-----------------------------------------------------------------
 }
 
-namespace Models
+namespace Models //#LEGACY
 {
 //-----------------------------------------------------------------
 template <class M>
@@ -1155,7 +1195,7 @@ struct MeasureModel_XvXYvYZvZ_EAR
         M r(1,3);
         r << elev, angle, range;
         return r.transpose();
-}
+    }
 };
 //-----------------------------------------------------------------
 template <class M>

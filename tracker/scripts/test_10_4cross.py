@@ -28,7 +28,7 @@ Rw = np.diag([pow(w_std,2)])
 
 Q0 = np.diag([process_var, process_var, process_var, process_var_w])
 
-G = e.BindG_10
+G = e.BindG_10_matrix
 
 Q = G(T)@Q0@G(T).T
 
@@ -85,7 +85,7 @@ def step(tracker, Z1, Z2, Z3, Z4):
     E3 = np.zeros((X3.shape[0]+1,X3.shape[1]-1))
     E4 = np.zeros((X4.shape[0]+1,X4.shape[1]-1))
 
-    Pd = 0.95 #probability of detection
+    Pd = 1#0.95 #probability of detection
     #print("Pd: "+str(Pd))
     common_est_am = Z1.shape[1]-1 #estimation amount (100%)
     #print("common_est_am: "+str(common_est_am))

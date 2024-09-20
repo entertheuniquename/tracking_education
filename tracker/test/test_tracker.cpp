@@ -10,7 +10,7 @@ TEST (TrackerGNN,tracker_base_test) {
     //----------------------------------------------------------------------
     struct stateModel
     {
-        Eigen::MatrixXd operator()(const Eigen::MatrixXd& x,double T)
+        Eigen::MatrixXd operator()(const Eigen::MatrixXd& x,double T, MatrixXd state=MatrixXd{})
         {
             Eigen::MatrixXd F(4,4);
             F << 1., T , 0., 0.,
@@ -22,7 +22,7 @@ TEST (TrackerGNN,tracker_base_test) {
     };
     struct measureModel
     {
-        Eigen::MatrixXd operator()(const Eigen::MatrixXd& x)
+        Eigen::MatrixXd operator()(const Eigen::MatrixXd& x, Eigen::MatrixXd z = Eigen::MatrixXd{}, Eigen::MatrixXd state = Eigen::MatrixXd{})
         {
             Eigen::MatrixXd H(2,4);
             H << 1., 0., 0., 0.,
@@ -39,14 +39,23 @@ TEST (TrackerGNN,tracker_base_test) {
     };
     struct noiseTransitionModel
     {
-        Eigen::MatrixXd operator()(double T)
+        Eigen::MatrixXd matrix(double T)
         {
             Eigen::MatrixXd G(4,2);
-            G << T*T/2.,       0.,
-                     T ,       0.,
-                     0.,   T*T/2.,
-                     0.,       T ;
+            G <<   T*T/2.,       0.,
+                       T ,       0.,
+                       0.,   T*T/2.,
+                       0.,       T ;
             return G;
+        }
+        Eigen::MatrixXd operator()(const Eigen::MatrixXd& x, double T)
+        {
+            Eigen::MatrixXd G(4,2);
+            G <<   T*T/2.,       0.,
+                       T ,       0.,
+                       0.,   T*T/2.,
+                       0.,       T ;
+            return G*x;
         }
     };
     double dt = 0.2;
@@ -63,10 +72,10 @@ TEST (TrackerGNN,tracker_base_test) {
                                TrackType,
                                MeasurementType> tracker;
 
-    MeasurementType initMeasurement1{0.,100000.,100000.,0.,0.,0.,0.,0.,0.,0.,0.,1.,1.,0.,0.,0.,0.,};
-    MeasurementType initMeasurement2{0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,1.,1.,0.,0.,0.,0.,};
-    MeasurementType initMeasurement3{0.,100000.,0.,0.,0.,0.,0.,0.,0.,0.,0.,1.,1.,0.,0.,0.,0.,};
-    MeasurementType initMeasurement4{0.,0.,100000.,0.,0.,0.,0.,0.,0.,0.,0.,1.,1.,0.,0.,0.,0.,};
+    MeasurementType initMeasurement1{0,0.,100000.,100000.,0.,0.,0.,0.,0.,0.,0.,0.,1.,1.,0.,0.,0.,0.,};
+    MeasurementType initMeasurement2{0,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,1.,1.,0.,0.,0.,0.,};
+    MeasurementType initMeasurement3{0,0.,100000.,0.,0.,0.,0.,0.,0.,0.,0.,0.,1.,1.,0.,0.,0.,0.,};
+    MeasurementType initMeasurement4{0,0.,0.,100000.,0.,0.,0.,0.,0.,0.,0.,0.,1.,1.,0.,0.,0.,0.,};
 
     std::vector<MeasurementType> measurements;
     measurements.push_back(initMeasurement1);
@@ -77,10 +86,10 @@ TEST (TrackerGNN,tracker_base_test) {
     tracker.step(measurements,dt);
     measurements.clear();
 
-    MeasurementType step1Measurement1{initMeasurement1.timepoint()+dt,99990.,99990.,0.,0.,0.,0.,0.,0.,0.,0.,1.,1.,0.,0.,0.,0.,};
-    MeasurementType step1Measurement2{initMeasurement2.timepoint()+dt,10.,10.,0.,0.,0.,0.,0.,0.,0.,0.,1.,1.,0.,0.,0.,0.,};
-    MeasurementType step1Measurement3{initMeasurement3.timepoint()+dt,99990.,10.,0.,0.,0.,0.,0.,0.,0.,0.,1.,1.,0.,0.,0.,0.,};
-    MeasurementType step1Measurement4{initMeasurement4.timepoint()+dt,10.,99990.,0.,0.,0.,0.,0.,0.,0.,0.,1.,1.,0.,0.,0.,0.,};
+    MeasurementType step1Measurement1{0,initMeasurement1.timepoint()+dt,99990.,99990.,0.,0.,0.,0.,0.,0.,0.,0.,1.,1.,0.,0.,0.,0.,};
+    MeasurementType step1Measurement2{0,initMeasurement2.timepoint()+dt,10.,10.,0.,0.,0.,0.,0.,0.,0.,0.,1.,1.,0.,0.,0.,0.,};
+    MeasurementType step1Measurement3{0,initMeasurement3.timepoint()+dt,99990.,10.,0.,0.,0.,0.,0.,0.,0.,0.,1.,1.,0.,0.,0.,0.,};
+    MeasurementType step1Measurement4{0,initMeasurement4.timepoint()+dt,10.,99990.,0.,0.,0.,0.,0.,0.,0.,0.,1.,1.,0.,0.,0.,0.,};
 
     measurements.push_back(step1Measurement1);
     measurements.push_back(step1Measurement2);
@@ -90,10 +99,10 @@ TEST (TrackerGNN,tracker_base_test) {
     tracker.step(measurements,dt);
     measurements.clear();
 
-    MeasurementType step2Measurement1{step1Measurement1.timepoint()+dt,99980.,99980.,0.,0.,0.,0.,0.,0.,0.,0.,1.,1.,0.,0.,0.,0.,};
-    MeasurementType step2Measurement2{step1Measurement2.timepoint()+dt,20.,20.,0.,0.,0.,0.,0.,0.,0.,0.,1.,1.,0.,0.,0.,0.,};
-    MeasurementType step2Measurement3{step1Measurement3.timepoint()+dt,99980.,20.,0.,0.,0.,0.,0.,0.,0.,0.,1.,1.,0.,0.,0.,0.,};
-    MeasurementType step2Measurement4{step1Measurement4.timepoint()+dt,20.,99980.,0.,0.,0.,0.,0.,0.,0.,0.,1.,1.,0.,0.,0.,0.,};
+    MeasurementType step2Measurement1{0,step1Measurement1.timepoint()+dt,99980.,99980.,0.,0.,0.,0.,0.,0.,0.,0.,1.,1.,0.,0.,0.,0.,};
+    MeasurementType step2Measurement2{0,step1Measurement2.timepoint()+dt,20.,20.,0.,0.,0.,0.,0.,0.,0.,0.,1.,1.,0.,0.,0.,0.,};
+    MeasurementType step2Measurement3{0,step1Measurement3.timepoint()+dt,99980.,20.,0.,0.,0.,0.,0.,0.,0.,0.,1.,1.,0.,0.,0.,0.,};
+    MeasurementType step2Measurement4{0,step1Measurement4.timepoint()+dt,20.,99980.,0.,0.,0.,0.,0.,0.,0.,0.,1.,1.,0.,0.,0.,0.,};
 
     measurements.push_back(step2Measurement1);
     measurements.push_back(step2Measurement2);

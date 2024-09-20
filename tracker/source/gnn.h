@@ -10,6 +10,12 @@ double formAssociationMatrixUnit(M zp, M z, M S, double G)
 }
 
 template<class M>
+double distance_of_filter(M zp, M z, M S)
+{
+    return (Utils::transpose(z - zp)*Utils::inverse(S)*(z - zp)).determinant()+std::log(S.determinant());
+}
+
+template<class M>
 double formAssociationMatrixUnit_(M zp, M z, M S, double G)
 {
     M y = z - zp;
@@ -44,8 +50,8 @@ public:
         if(tracks_size==0 || measurements_size==0)
             tracks_size=measurements_size=0;
 
-        M d2(tracks_size,measurements_size);
-        d2.setZero();
+        M dG2(tracks_size,measurements_size);
+        dG2.setZero();
 
         M a(tracks_size,measurements_size);
         a.setZero();
@@ -69,13 +75,14 @@ public:
 
                 auto G = tracks.at(i)->getBigGate(2000.,dt);//50000.;
                 auto G2 = tracks.at(i)->getGate(S);
-                //d2(i,j) = (Utils::transpose(y)*Utils::inverse(S)*y).determinant();
+                dG2(i,j) = distance_of_filter<Eigen::MatrixXd>(zp,z,S);
                 //a(i,j) = G-d2(i,j);
 
                 a(i,j) = formAssociationMatrixUnit_(zp,z,S,G);
             }
         }
         //std::cout << "GlobalNearestNeighbor: [result] a[" << a.rows() << "," << a.cols() << "]" << std::endl << a << std::endl;
+        //std::cout << "GlobalNearestNeighbor: [result] dG2[" << dG2.rows() << "," << dG2.cols() << "]" << std::endl << dG2 << std::endl;
         return a;
     }
 };
@@ -161,4 +168,93 @@ public:
         return pairs;
     }
 };
+
+template<class M>
+class AuctionMinimization
+{
+private:
+public:
+    std::pair<bool,M> make_horizontal_matrix(M in_matrix)
+    {/*Метод транспонирует матрицу, если она вертикальная, превращая её в горизонтальную.
+       Вместе с матрицей возвращается флаг об осуществлении транспонирования.*/
+        if(in_matrix.rows()>in_matrix.cols())
+            return std::make_pair(true,Utils::transpose(in_matrix));
+        else
+            return std::make_pair(false,in_matrix);
+    }
+    std::pair<bool,int> findUnmatchedAgent(std::map<int,std::pair<bool,int>> agents)
+    {
+        for(auto a:agents)
+            if(a.second.first==false)
+                return std::make_pair(true,a.first);
+        return std::make_pair(false,0);
+    }
+    std::pair<double,std::map<int,int>> operator()(M input_matrix, double max_value)
+    {
+        auto a = make_horizontal_matrix(input_matrix);
+        M val_matrix = a.second;
+        bool b_transpose = a.first;
+
+        std::map<int,std::pair<bool,int>> agents_local;
+        std::map<int,double> prices_local;
+
+        for(int i=0;i<val_matrix.rows();i++)
+            agents_local[i] = std::make_pair(false,0);
+        for(int i=0;i<val_matrix.cols();i++)
+            prices_local[i] = 0.;
+
+        int i=0;
+        while(findUnmatchedAgent(agents_local).first)
+        {
+            i+=1;
+            int unassigned_agent = findUnmatchedAgent(agents_local).second;
+            M agents_row = val_matrix.row(unassigned_agent);
+            double min_diff = max_value+1.;
+            int min_obj = 0;
+
+            for(int j=0;j<val_matrix.cols();j++)
+            {
+                double value = agents_row(j) + prices_local[j];
+                if(value < min_diff)
+                {
+                    min_diff = value;
+                    min_obj = j;
+                }
+            }
+
+            double next_min_diff = max_value+1.;
+            for(int l=0;l<val_matrix.cols();l++)
+            {
+                double value = agents_row(l) - prices_local[l];
+                if(value < next_min_diff && value > min_diff)
+                    next_min_diff = value;
+            }
+
+            double bid_increment = next_min_diff - min_diff;
+            agents_local[unassigned_agent] = std::make_pair(true,min_obj);
+
+            for(auto a:agents_local)
+                if(a.second.second==min_obj && a.first!=unassigned_agent)
+                    agents_local[a.first] = std::make_pair(false,0.);
+
+            prices_local[min_obj] += bid_increment;
+        }
+
+        double sum = 0.;
+        for(auto a:agents_local)
+            if(a.second.first != false)
+                sum=sum+val_matrix(a.first,a.second.second);
+
+        std::map<int,int> result;
+        if(b_transpose)
+            for(auto a:agents_local)
+                result[a.second.second] = a.first;
+        else
+            for(auto a:agents_local)
+                result[a.first] = a.second.second;
+
+        return std::make_pair(sum,result);
+    }
+};
+
 }

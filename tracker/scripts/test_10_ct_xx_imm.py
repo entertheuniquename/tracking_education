@@ -26,7 +26,7 @@ Rw = np.diag([pow(w_std,2)])
 
 Q0 = np.diag([process_var, process_var, process_var, process_var_w])
 
-G = e.BindG_10
+G = e.BindG_10_matrix
 
 Q = G(T)@Q0@G(T).T
 
@@ -93,42 +93,42 @@ imm4_est_8g, mus4_8g = stand.estimate(e.BindIMM_10_KFCV_EKFCT_KFCA_EKFCTv,x0_8g,
                                    x0_2g,P0,Q0,Rp,
                                    e.BindFCT_10,
                                    e.BindHXX_10,
-                                   e.BindG_10,
+                                   e.BindG_10_matrix,
                                    6,100,2000,0.098,MU=mu,TP=tp,imm_filters_amount=3)
 
 [fff1, imm_std_err_5g] = stand.test(e.BindIMM_10_KFCV_EKFCT_KFCA,
                                    x0_5g,P0,Q0,Rp,
                                    e.BindFCT_10,
                                    e.BindHXX_10,
-                                   e.BindG_10,
+                                   e.BindG_10_matrix,
                                    6,100,2000,0.245,MU=mu,TP=tp,imm_filters_amount=3)
 
 [fff2, imm_std_err_8g] = stand.test(e.BindIMM_10_KFCV_EKFCT_KFCA,
                                    x0_8g,P0,Q0,Rp,
                                    e.BindFCT_10,
                                    e.BindHXX_10,
-                                   e.BindG_10,
+                                   e.BindG_10_matrix,
                                    6,100,2000,0.392,MU=mu,TP=tp,imm_filters_amount=3)
 
 [fff40, imm4_std_err_2g] = stand.test(e.BindIMM_10_KFCV_EKFCT_KFCA_EKFCTv,
                                       x0_2g,P0,Q0,Rp,
                                       e.BindFCT_10,
                                       e.BindHXX_10,
-                                      e.BindG_10,
+                                      e.BindG_10_matrix,
                                       6,100,2000,0.098,MU=mu4,TP=tp4,imm_filters_amount=4)
 
 [fff41, imm4_std_err_5g] = stand.test(e.BindIMM_10_KFCV_EKFCT_KFCA_EKFCTv,
                                       x0_5g,P0,Q0,Rp,
                                       e.BindFCT_10,
                                       e.BindHXX_10,
-                                      e.BindG_10,
+                                      e.BindG_10_matrix,
                                       6,100,2000,0.098,MU=mu4,TP=tp4,imm_filters_amount=4)
 
 [fff41, imm4_std_err_8g] = stand.test(e.BindIMM_10_KFCV_EKFCT_KFCA_EKFCTv,
                                       x0_8g,P0,Q0,Rp,
                                       e.BindFCT_10,
                                       e.BindHXX_10,
-                                      e.BindG_10,
+                                      e.BindG_10_matrix,
                                       6,100,2000,0.098,MU=mu4,TP=tp4,imm_filters_amount=4)
 
 fig = plt.figure("Тест для исследования фильтра IMM и перегрузками в 2G, 5G и 8G, состояниями типа [x,vx,ax,y,vy,ay,z,vz,az,w] и измерениями типа [x,y,z]",figsize=(21,11))

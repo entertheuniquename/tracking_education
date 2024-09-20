@@ -25,6 +25,29 @@ public:
     Eigen::MatrixXd correct(const Eigen::MatrixXd &z){return kf.correct(z).first;}
 };
 
+class BindKF_10_CV_POL
+{
+private:
+    Estimator::KF<Eigen::MatrixXd,
+                  Models10::FCV<Eigen::MatrixXd>,
+                  Models10::H_POL<Eigen::MatrixXd>,
+                  Models10::G<Eigen::MatrixXd>> kf;
+public:
+
+    BindKF_10_CV_POL(Eigen::MatrixXd in_state,
+                     Eigen::MatrixXd in_covariance,
+                     Eigen::MatrixXd in_process_noise,
+                     Eigen::MatrixXd in_measurement_noise):
+        kf(in_state,
+           in_covariance,
+           in_process_noise,
+           in_measurement_noise)
+    {}
+
+    Eigen::MatrixXd predict(double dt){return kf.predict(dt).first;}
+    Eigen::MatrixXd correct(const Eigen::MatrixXd &z){return kf.correct(z).first;}
+};
+
 class BindKF_10_CA_XX
 {
 private:
@@ -53,6 +76,10 @@ void bind_kf(pybind11::module &m)
         .def(py::init<Eigen::MatrixXd,Eigen::MatrixXd,Eigen::MatrixXd,Eigen::MatrixXd>())
         .def("predict",&BindKF_10_CV_XX::predict)
         .def("correct",&BindKF_10_CV_XX::correct);
+    py::class_<BindKF_10_CV_POL>(m, "BindKF_10_CV_POL")
+        .def(py::init<Eigen::MatrixXd,Eigen::MatrixXd,Eigen::MatrixXd,Eigen::MatrixXd>())
+        .def("predict",&BindKF_10_CV_POL::predict)
+        .def("correct",&BindKF_10_CV_POL::correct);
     py::class_<BindKF_10_CA_XX>(m, "BindKF_10_CA_XX")
         .def(py::init<Eigen::MatrixXd,Eigen::MatrixXd,Eigen::MatrixXd,Eigen::MatrixXd>())
         .def("predict",&BindKF_10_CA_XX::predict)

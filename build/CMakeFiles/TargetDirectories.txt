@@ -1,0 +1,12 @@
+/home/ivan/projects/tracking_education/build/CMakeFiles/tracker.dir
+/home/ivan/projects/tracking_education/build/CMakeFiles/test.dir
+/home/ivan/projects/tracking_education/build/CMakeFiles/edit_cache.dir
+/home/ivan/projects/tracking_education/build/CMakeFiles/rebuild_cache.dir
+/home/ivan/projects/tracking_education/build/bindpy/CMakeFiles/estimator.dir
+/home/ivan/projects/tracking_education/build/bindpy/CMakeFiles/test.dir
+/home/ivan/projects/tracking_education/build/bindpy/CMakeFiles/edit_cache.dir
+/home/ivan/projects/tracking_education/build/bindpy/CMakeFiles/rebuild_cache.dir
+/home/ivan/projects/tracking_education/build/test/CMakeFiles/tests_run.dir
+/home/ivan/projects/tracking_education/build/test/CMakeFiles/test.dir
+/home/ivan/projects/tracking_education/build/test/CMakeFiles/edit_cache.dir
+/home/ivan/projects/tracking_education/build/test/CMakeFiles/rebuild_cache.dir

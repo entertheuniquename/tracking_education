@@ -46,7 +46,7 @@ public:
     {
         std::vector<MeasurementType> measurements;
         for(int i=0;i<zs.rows();i++)
-            measurements.push_back(MeasurementType{time,zs(i,0),zs(i,1),zs(i,2),0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.});
+            measurements.push_back(MeasurementType{0,time,zs(i,0),zs(i,1),zs(i,2),0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.});
 
         time+=dt;
 
@@ -79,7 +79,7 @@ public:
     {
         std::vector<MeasurementType> measurements;
         for(int i=0;i<zs.rows();i++)
-            measurements.push_back(MeasurementType{time,zs(i,0),zs(i,1),zs(i,2),0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.});
+            measurements.push_back(MeasurementType{0,time,zs(i,0),zs(i,1),zs(i,2),0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.});
 
         time+=dt;
 

@@ -9,13 +9,13 @@ template <class M>
 struct EKFMath
 {
 public:
-    template<class SM, class JSM>
+    template<class SM, class JSM, class GM>
     void predict(M& xp,SM A,JSM JA, const M& x,const M& B,const M& u,
-                    M& Pp,const M& P,const M& G,const M& Q,
+                    M& Pp,const M& P,GM G,const M& Q,
                     double dt)
     {
-        xp = A(x,dt) + B*u;
-        Pp = JA(x,dt)*P*Utils::transpose(JA(x,dt)) + G*Q*Utils::transpose(G);
+        xp = A(x,dt,x) + B*u;
+        Pp = Utils::transpose(JA(Utils::transpose(JA(P,dt,x)),dt,x)) + Utils::transpose(G(Utils::transpose(G(Q,dt)),dt));
         Pp = (Pp + Utils::transpose(Pp))/2.;
     }
 
@@ -24,9 +24,9 @@ public:
                     M& xc,const M& xp,const M& z,
                     M& zp,M& Pc,M& Se, M& residue)
     {
-          zp = H(xp);
-          Se = JH()*Pp*Utils::transpose(JH()) + R;
-        M K = Pp*Utils::transpose(JH())*Utils::inverse(Se);
+          zp = H(xp,zp,xp);
+          Se = Utils::transpose(JH(Utils::transpose(JH(Pp,zp,xp)),zp,xp)) + R;
+        M K = Utils::transpose(JH(Utils::transpose(Pp),zp,xp))*Utils::inverse(Se);
           residue = z - zp;
           xc = xp + K * residue;
           Pc = Pp - K * Se * Utils::transpose(K);
@@ -54,7 +54,14 @@ public:
         covariance(in_covariance),
         process_noise(in_process_noise),
         measurement_noise(in_measurement_noise)
-    {}
+    {
+        //std::cout << "EKF ========== ========== ========== ========== ==========" << std::endl;
+        //std::cout << "state:" << std::endl << Utils::transpose(state) << std::endl;
+        //std::cout << "covariance:" << std::endl << covariance << std::endl;
+        //std::cout << "process_noise:" << std::endl << process_noise << std::endl;
+        //std::cout << "measurement_noise:" << std::endl << measurement_noise << std::endl;
+        //std::cout << "============= ========== ========== ========== ==========" << std::endl;
+    }
 
     EKF(const EKF& ekf):
         state(ekf.state),
@@ -70,7 +77,7 @@ public:
 
     M getProcessNoise()const override{return process_noise;}
     M getMeasurementNoise()const override{return measurement_noise;}
-    M getProcessNoise(double dt)const override{return (GM()(dt)*process_noise*Utils::transpose(GM()(dt)));}
+    M getProcessNoise(double dt)const override{return Utils::transpose(GM()(Utils::transpose(GM()(process_noise,dt)),dt));}
 
     M getState()const override{return state;}
     M getCovariance()const override{return covariance;}
@@ -79,17 +86,18 @@ public:
     M getMeasurementPredict()const override{return measurement_predict;}
     std::pair<M,M> getMeasurementPredictData(double dt)const override
     {
-        M xp = SM()(state,dt);
-        M Pp = JSM()(state,dt)*covariance*Utils::transpose(JSM()(state,dt)) + GM()(dt)*process_noise*Utils::transpose(GM()(dt));
+        M xp = SM()(state,dt,state);
+        M Pp = Utils::transpose(JSM()(Utils::transpose(JSM()(covariance,dt,state)),dt,state)) + Utils::transpose(GM()(Utils::transpose(GM()(process_noise,dt)),dt));
         Pp = (Pp + Utils::transpose(Pp))/2.;
-        M zp = MM()(xp);
-        M Se = JMM()()*Pp*Utils::transpose(JMM()()) + measurement_noise;
+        M zp = MM()(xp,zp,xp);
+        M Se =  Utils::transpose(JMM()(Utils::transpose(JMM()(Pp,zp,xp)),zp,xp)) + measurement_noise;
         return std::make_pair(zp,Se);
     }
     M getCovarianceOfMeasurementPredict()const override{return covariance_of_measurement_predict;}
     bool setState(M& state_in)override{state = state_in;return true;}
     bool setCovariance(M& covariance_in)override{covariance = covariance_in;return true;}
 
+    M getGQG(double dt){return Utils::transpose(GM()(Utils::transpose(GM()(process_noise,dt)),dt));}
 
 
     std::pair<M,M> predict(double dt)
@@ -105,10 +113,7 @@ public:
               M& xp = this->state_predict;
               M& Pp = this->covariance_predict;
 
-        GM Gm;
-        M G = Gm(dt);
-
-        EKFMath<M>::predict(xp,SM(),JSM(),x,B,u,Pp,P,G,Q,dt);
+        EKFMath<M>::predict(xp,SM(),JSM(),x,B,u,Pp,P,GM(),Q,dt);
 
         state = state_predict;
         covariance = covariance_predict;
