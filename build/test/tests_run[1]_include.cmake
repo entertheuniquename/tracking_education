@@ -1,5 +1,0 @@
-if(EXISTS "/home/ivan/projects/tracking_education/build/test/tests_run[1]_tests.cmake")
-  include("/home/ivan/projects/tracking_education/build/test/tests_run[1]_tests.cmake")
-else()
-  add_test(tests_run_NOT_BUILT tests_run_NOT_BUILT)
-endif()

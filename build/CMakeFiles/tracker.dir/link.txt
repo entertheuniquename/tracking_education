@@ -1,2 +1,0 @@
-/usr/bin/ar qc /home/ivan/projects/tracking_education/tracker/bin/libtracker.a CMakeFiles/tracker.dir/source/main.cpp.o
-/usr/bin/ranlib /home/ivan/projects/tracking_education/tracker/bin/libtracker.a
